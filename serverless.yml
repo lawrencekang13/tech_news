@@ -1,0 +1,49 @@
+# serverless.yml (优化后，适用于 Serverless Framework V3)
+
+# (RECOMMENDED) 锁定 Serverless Framework 版本，确保未来兼容性
+# 确保你当前安装的 Serverless CLI 版本是 3.40.0 或更高 (3.x.x)
+frameworkVersion: ^3.40.0
+
+# (REQUIRED) 定义你的服务名称
+# 这是部署到 AWS CloudFormation 时的堆栈名称前缀。
+# 对于传统 Serverless 服务，'service' 属性是必需的。
+service: global-tech-news-app
+
+# (REQUIRED) 定义你的 AWS 提供商
+provider:
+  name: aws
+  # 确保这里定义的 Node.js 版本与 AWS Lambda 支持的运行时版本一致 (例如 nodejs18.x 或 nodejs20.x)
+  runtime: nodejs18.x 
+  region: ap-southeast-2 # 你的 AWS 区域
+
+# （可选）在这里可以添加其他传统 Serverless 插件，例如离线运行插件
+# plugins:
+#   - serverless-offline
+
+# (REQUIRED) 自定义配置，用于 Next.js Component 的特定配置
+# 在 Serverless Framework V3 中，'@sls-next/serverless-component' 是作为一个插件或自定义配置来加载的。
+custom:
+  # Next.js Component 的配置块
+  # 这个 'nextjs' 键是 '@sls-next/serverless-component' 插件期望的配置入口
+  nextjs:
+    # 您的 Next.js 项目根目录
+    nextConfigDir: './'
+    
+    # Lambda 函数的内存配置 (MB)
+    memory: 1024 
+    
+    # Lambda 函数的超时时间 (秒)
+    timeout: 30 
+
+    # （可选）自定义域名配置
+    # 如果您希望使用自己的域名来访问应用，请取消注释并配置。
+    # 确保您的域名已在 AWS Route 53 中托管，并且在 us-east-1 区域申请了 ACM SSL 证书。
+    # domain:
+    #   - domain: yourdomain.com # 替换为您的主域名
+    #     subdomains:
+    #       www: www # www.yourdomain.com 将指向您的 Next.js 应用
+
+# (REQUIRED) 插件列表
+# 将 '@sls-next/serverless-component' 作为插件加载到 Serverless Framework 中
+plugins:
+  - '@sls-next/serverless-component'
