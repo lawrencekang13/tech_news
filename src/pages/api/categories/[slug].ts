@@ -1,73 +1,107 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import axios from 'axios';
-
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
+import connectDB from '../../../../lib/db';
+import Category from '../../../../models/Category';
+import { successResponse, errorResponse } from '../../../../lib/apiResponse';
+import redis from '../../../../lib/redis';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { slug } = req.query;
-  
-  if (req.method === 'GET') {
-    try {
-      // 调用后端API获取分类详情
-      const response = await axios.get(
-        `${BACKEND_URL}/api/categories/${slug}`,
-        { timeout: 10000 }
-      );
-      
-      res.status(200).json(response.data);
-    } catch (error: any) {
-      console.error(`获取分类 ${slug} 详情失败:`, error.message);
-      
-      // 如果后端不可用，返回模拟数据
-      const mockCategoryData = {
-        success: true,
-        data: {
-          id: '1',
-          slug: slug,
-          name: getCategoryName(slug as string),
-          description: getCategoryDescription(slug as string),
-          showInNav: true,
-          icon: `${slug}-icon`,
-          aliases: [],
-          metadata: {
-            color: '#3B82F6',
-            relatedCategories: ['ai', 'tech']
-          }
-        },
-        message: '获取分类详情成功（模拟数据）'
-      };
-      
-      res.status(200).json(mockCategoryData);
+  if (req.method !== 'GET') {
+    return res.status(405).json({ message: 'Method not allowed' });
+  }
+
+  try {
+    await connectDB();
+
+    const { slug } = req.query;
+    
+    if (!slug) {
+      return errorResponse(res, '分类标识不能为空', 400);
     }
-  } else {
-    res.setHeader('Allow', ['GET']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+
+    const cacheKey = `category:${slug}`;
+
+    // 尝试从Redis获取缓存
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        const category = JSON.parse(cached);
+        return successResponse(res, category, '获取分类详情成功');
+      }
+    } catch (cacheError) {
+      console.warn('Redis cache error:', cacheError);
+    }
+
+    const category = await Category.findOne({ 
+      slug: slug, 
+      isActive: true 
+    }).lean();
+
+    if (!category) {
+      // 返回默认分类数据
+      const defaultCategory = getDefaultCategory(slug as string);
+      if (defaultCategory) {
+        return successResponse(res, defaultCategory, '获取分类详情成功（默认数据）');
+      }
+      return errorResponse(res, '分类不存在', 404);
+    }
+
+    // 缓存结果（10分钟）
+    try {
+      await redis.set(cacheKey, JSON.stringify(category), 600);
+    } catch (cacheError) {
+      console.warn('Redis cache set error:', cacheError);
+    }
+
+    return successResponse(res, category, '获取分类详情成功');
+  } catch (error) {
+    console.error('获取分类详情失败:', error);
+    
+    // 如果数据库连接失败，返回默认分类
+    const defaultCategory = getDefaultCategory(req.query.slug as string);
+    if (defaultCategory) {
+      return successResponse(res, defaultCategory, '获取分类详情成功（默认数据）');
+    }
+    
+    return errorResponse(res, '获取分类详情失败', 500);
   }
 }
 
-function getCategoryName(slug: string): string {
-  const categories: { [key: string]: string } = {
-    'ai': '人工智能',
-    'quantum-computing': '量子计算',
-    'blockchain': '区块链',
-    'biotech': '生物科技',
-    'ar-vr': 'AR/VR',
-    'autonomous-vehicles': '自动驾驶'
+function getDefaultCategory(slug: string) {
+  const defaultCategories: { [key: string]: any } = {
+    'ai': {
+      _id: '1',
+      name: '人工智能',
+      slug: 'ai',
+      description: '人工智能领域的最新发展和突破',
+      icon: '🤖',
+      color: '#3B82F6',
+      order: 1,
+      isActive: true
+    },
+    'tech': {
+      _id: '2',
+      name: '科技',
+      slug: 'tech',
+      description: '科技行业的最新动态和创新',
+      icon: '💻',
+      color: '#10B981',
+      order: 2,
+      isActive: true
+    },
+    'business': {
+      _id: '3',
+      name: '商业',
+      slug: 'business',
+      description: '商业财经领域的重要资讯',
+      icon: '💼',
+      color: '#F59E0B',
+      order: 3,
+      isActive: true
+    }
   };
-  return categories[slug] || slug;
-}
-
-function getCategoryDescription(slug: string): string {
-  const descriptions: { [key: string]: string } = {
-    'ai': '人工智能领域的最新发展和突破',
-    'quantum-computing': '量子计算技术的前沿研究和应用',
-    'blockchain': '区块链和加密货币的最新动态',
-    'biotech': '生物技术和医疗健康的创新进展',
-    'ar-vr': '虚拟现实和增强现实技术的发展',
-    'autonomous-vehicles': '自动驾驶技术的最新进展'
-  };
-  return descriptions[slug] || `${slug}相关的科技新闻`;
+  
+  return defaultCategories[slug] || null;
 }

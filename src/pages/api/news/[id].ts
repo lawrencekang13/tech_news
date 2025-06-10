@@ -1,7 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import axios from 'axios';
+// 移除对后端服务器的依赖，使用内部API
+// import axios from 'axios';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5001';
+// const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5001';
 
 // 模拟新闻数据库
 const mockNewsDatabase = {
@@ -261,28 +262,34 @@ export default async function handler(
         });
       }
       
-      // 调用后端API获取新闻详情
-      const response = await axios.get(`${BACKEND_URL}/api/news/${id}`, {
-        timeout: 10000,
-      });
+      // 使用内部数据库查询新闻详情
+      const newsId = Array.isArray(id) ? id[0] : id;
+      const newsItem = mockNewsDatabase[newsId as keyof typeof mockNewsDatabase];
       
-      // 确保返回的数据包含sourceUrl字段
-      if (response.data && response.data.data) {
-        // 如果后端返回的数据没有sourceUrl或sourceUrl为空，添加一个默认值
-        if (!response.data.data.sourceUrl || response.data.data.sourceUrl.trim() === '') {
-          response.data.data.sourceUrl = `https://example.com/news/${id}`;
+      if (newsItem) {
+        // 确保返回的数据包含sourceUrl字段
+        if (!newsItem.sourceUrl || newsItem.sourceUrl.trim() === '') {
+          newsItem.sourceUrl = `https://example.com/news/${id}`;
         }
         
         // 验证sourceUrl是否为有效URL
         try {
-          new URL(response.data.data.sourceUrl);
+          new URL(newsItem.sourceUrl);
         } catch (error) {
-          // 如果URL无效，替换为默认URL
-          response.data.data.sourceUrl = `https://example.com/news/${id}`;
+          newsItem.sourceUrl = `https://example.com/news/${id}`;
         }
+        
+        res.status(200).json({
+          success: true,
+          data: newsItem
+        });
+      } else {
+        res.status(404).json({
+          success: false,
+          message: '新闻不存在',
+          data: null
+        });
       }
-      
-      res.status(200).json(response.data);
     } catch (error: any) {
       console.error('获取新闻详情失败:', error.message);
       

@@ -1,79 +1,110 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import axios from 'axios';
-
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5001';
+import connectDB from '../../../../lib/db';
+import News from '../../../../models/News';
+import { successResponse, errorResponse, paginatedResponse } from '../../../../lib/apiResponse';
+import redis from '../../../../lib/redis';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method === 'GET') {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ message: 'Method not allowed' });
+  }
+
+  try {
+    await connectDB();
+
+    const { category, page = 1, limit = 10, sort = 'publishedAt' } = req.query;
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const skip = (pageNum - 1) * limitNum;
+
+    // 构建缓存键
+    const cacheKey = `news:list:${category || 'all'}:page:${pageNum}:limit:${limitNum}:sort:${sort}`;
+
+    // 尝试从Redis获取缓存
     try {
-      const { category, page = 1, limit = 10 } = req.query;
-      
-      // 构建后端API URL
-      let backendUrl = `${BACKEND_URL}/api/news?page=${page}&limit=${limit}`;
-      if (category && category !== '') {
-        backendUrl += `&category=${category}`;
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        const result = JSON.parse(cached);
+        return res.status(200).json(result);
       }
-      
-      // 调用后端API
-      const response = await axios.get(backendUrl, {
-        timeout: 10000,
-      });
-      
-      res.status(200).json(response.data);
-    } catch (error: any) {
-      console.error('获取新闻数据失败:', error.message);
-      
-      // 如果后端不可用，返回模拟数据
-      const mockData = {
-        success: true,
-        data: {
-          news: [
-            {
-              id: '1',
-              title: 'OpenAI发布GPT-5，性能较GPT-4提升50%',
-              summary: 'OpenAI今日正式发布了GPT-5模型，在推理能力、创造性和安全性方面都有显著提升。',
-              content: 'OpenAI今日正式发布了GPT-5模型...',
-              publishDate: new Date().toISOString(),
-              source: 'TechCrunch',
-              author: 'Sarah Chen',
-              imageUrl: 'https://placeholder-api.com/800x400?text=GPT-5',
-              category: 'ai',
-              tags: ['OpenAI', 'GPT-5', '人工智能'],
-              viewCount: 1250,
-              isRealtime: true
-            },
-            {
-              id: '2',
-              title: '量子计算突破：IBM实现1000量子比特处理器',
-              summary: 'IBM宣布成功开发出1000量子比特的量子处理器，标志着量子计算进入新的里程碑。',
-              content: 'IBM宣布成功开发出1000量子比特的量子处理器...',
-              publishDate: new Date(Date.now() - 3600000).toISOString(),
-              source: 'Nature',
-              author: 'Dr. Michael Zhang',
-              imageUrl: 'https://placeholder-api.com/800x400?text=Quantum+Computing',
-              category: 'quantum-computing',
-              tags: ['IBM', '量子计算', '处理器'],
-              viewCount: 890,
-              isRealtime: true
-            }
-          ],
-          pagination: {
-            currentPage: 1,
-            totalPages: 5,
-            totalItems: 50,
-            hasNext: true,
-            hasPrev: false
-          }
-        }
-      };
-      
-      res.status(200).json(mockData);
+    } catch (cacheError) {
+      console.warn('Redis cache error:', cacheError);
     }
-  } else {
-    res.setHeader('Allow', ['GET']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+
+    // 构建查询条件
+    let query: any = { status: 'published' };
+    
+    if (category && category !== 'all') {
+      query.category = category;
+    }
+
+    // 构建排序条件
+    let sortCondition: any = {};
+    switch (sort) {
+      case 'views':
+        sortCondition = { views: -1, publishedAt: -1 };
+        break;
+      case 'likes':
+        sortCondition = { likes: -1, publishedAt: -1 };
+        break;
+      default:
+        sortCondition = { publishedAt: -1 };
+    }
+
+    // 获取新闻列表和总数
+    const [news, total] = await Promise.all([
+      News.find(query)
+        .select('title summary author publishedAt category tags views likes comments thumbnail url')
+        .sort(sortCondition)
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      News.countDocuments(query)
+    ]);
+
+    const result = {
+      success: true,
+      data: news,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(total / limitNum),
+        totalItems: total,
+        itemsPerPage: limitNum,
+        hasNextPage: pageNum < Math.ceil(total / limitNum),
+        hasPrevPage: pageNum > 1
+      },
+      message: '获取新闻列表成功'
+    };
+
+    // 缓存结果（5分钟）
+    try {
+      await redis.set(cacheKey, JSON.stringify(result), 300);
+    } catch (cacheError) {
+      console.warn('Redis cache set error:', cacheError);
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('获取新闻列表失败:', error);
+    
+    // 如果数据库连接失败，返回空结果
+    const fallbackResult = {
+      success: true,
+      data: [],
+      pagination: {
+        currentPage: parseInt(req.query.page as string) || 1,
+        totalPages: 0,
+        totalItems: 0,
+        itemsPerPage: parseInt(req.query.limit as string) || 10,
+        hasNextPage: false,
+        hasPrevPage: false
+      },
+      message: '获取新闻列表成功（暂无数据）'
+    };
+    
+    return res.status(200).json(fallbackResult);
   }
 }
