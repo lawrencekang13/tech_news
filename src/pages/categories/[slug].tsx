@@ -1,3 +1,5 @@
+// src/pages/categories/[slug].tsx
+
 import React, { useState } from 'react';
 import { GetStaticProps, GetStaticPaths, GetStaticPropsResult } from 'next'; // 确保 GetStaticPropsResult 也被导入
 import { useRouter } from 'next/router';
