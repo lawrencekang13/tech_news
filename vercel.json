@@ -1,24 +1,22 @@
 {
   "version": 2,
   "name": "tech-news-platform",
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ],
   "env": {
-    "MONGO_URI": "@mongo-uri",
-    "REDIS_URL": "@redis-url",
-    "REDIS_TOKEN": "@redis-token",
-    "NEXTAUTH_SECRET": "@nextauth-secret",
-    "RSS_SOURCES": "@rss-sources",
-    "RSS_API_KEY": "@rss-api-key"
-  },
+  "MONGO_URI": "@MONGO_URI", // 注意这里变成了大写，与代码和.env.local一致
+  "REDIS_URL": "@REDIS_URL",
+  "REDIS_TOKEN": "@REDIS_TOKEN",
+  "NEXTAUTH_SECRET": "@NEXTAUTH_SECRET",
+  "RSS_SOURCES": "@RSS_SOURCES",
+  "RSS_API_KEY": "@RSS_API_KEY",
+  "NEXT_PUBLIC_API_URL": "@NEXT_PUBLIC_API_URL", // 补上可能缺失的变量
+  "NEXT_PUBLIC_APP_NAME": "@NEXT_PUBLIC_APP_NAME",
+  "NEXT_PUBLIC_APP_VERSION": "@NEXT_PUBLIC_APP_VERSION",
+  "CACHE_TTL_NEWS_LIST": "@CACHE_TTL_NEWS_LIST",
+  "CACHE_TTL_NEWS_DETAIL": "@CACHE_TTL_NEWS_DETAIL",
+  "CACHE_TTL_TRENDING": "@CACHE_TTL_TRENDING",
+  "NEWS_API_KEY": "@NEWS_API_KEY",
+  "NEWS_API_BASE_URL": "@NEWS_API_BASE_URL"
+},
   "functions": {
     "pages/api/**/*.js": {
       "maxDuration": 30
