@@ -34,13 +34,13 @@ jobs:
     - name: Build project
       run: npm run build
       env:
-        # 正确引用 GitHub Secrets 作为环境变量
+        # 正确引用 GitHub Secrets 作为环境变量，传递给构建过程
         MONGO_URI: ${{ secrets.MONGO_URI }}
         REDIS_URL: ${{ secrets.REDIS_URL }}
         REDIS_TOKEN: ${{ secrets.REDIS_TOKEN }}
-        NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
         NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+        NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
         NEXT_PUBLIC_APP_NAME: ${{ secrets.NEXT_PUBLIC_APP_NAME }}
         NEXT_PUBLIC_APP_VERSION: ${{ secrets.NEXT_PUBLIC_APP_VERSION }}
         RSS_SOURCES: ${{ secrets.RSS_SOURCES }}
@@ -51,15 +51,24 @@ jobs:
         NEWS_API_BASE_URL: ${{ secrets.NEWS_API_BASE_URL }}
         NODE_ENV: production # 部署时通常设置为 production
 
-    - name: Deploy to Vercel
-      uses: amondnet/vercel-action@v25
-      with:
-        # 正确引用 GitHub Secrets 作为 Vercel Action 的输入参数
-        vercel-token: ${{ secrets.VERCEL_TOKEN }}
-        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-        working-directory: ./next/ # 假设你的 Next.js 项目在仓库根目录。
-        vercel-version: 'latest'                     
+    - name: Deploy to Vercel (using Vercel CLI) # 修改步骤名称以反映新的部署方式
+      run: |
+        # 安装 Vercel CLI
+        npm install -g vercel
+
+        # 切换到 Next.js 应用的根目录
+        # 确保这个目录与你的 Next.js 应用实际位置匹配
+        cd ./next/
+
+        # 执行 Vercel 部署命令
+        # --prod 表示部署到生产环境
+        # --prebuilt (重要) 告诉 Vercel 已经构建了产物，直接部署。
+        # --confirm 自动确认部署提示
+        # 将 Vercel 认证相关的 Secrets 作为环境变量传递给 Vercel CLI
+        VERCEL_TOKEN=${{ secrets.VERCEL_TOKEN }} \
+        VERCEL_ORG_ID=${{ secrets.VERCEL_ORG_ID }} \
+        VERCEL_PROJECT_ID=${{ secrets.VERCEL_PROJECT_ID }} \
+        vercel deploy --prod --prebuilt --confirm --debug # 添加 --debug 可在失败时获取更详细日志
 
   rss-fetch:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
