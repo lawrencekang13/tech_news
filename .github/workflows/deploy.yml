@@ -61,11 +61,18 @@ jobs:
         npm install -g vercel
 
         # 切换到 Next.js 应用的根目录 (此行可省略，因为 working-directory 已经设置)
-        # cd ./ 
+        # cd ./
 
-        vercel deploy --prod --prebuilt --confirm --debug \
-          --token=${{ secrets.VERCEL_TOKEN }} \
-          
+        # 执行 Vercel 部署命令
+        # --prod 表示部署到生产环境
+        # --confirm 自动确认部署提示
+        # --debug (可选) 添加 --debug 可在失败时获取更详细日志
+        # --token=${{ secrets.VERCEL_TOKEN }} 用于授权
+        vercel deploy --prod --confirm --debug \
+          --token=${{ secrets.VERCEL_TOKEN }}
+          # 移除了 --scope 和 --project，因为个人账户部署时可能不需要
+          # 请确保 vercel.json 中的 root 属性也已设置为 "."
+
       working-directory: ./ # 确认这里是你的 Next.js 应用的实际根目录
 
   rss-fetch:
