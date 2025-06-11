@@ -1,12 +1,12 @@
 // src/pages/categories/[slug].tsx
 
 import React, { useState } from 'react';
-import { GetStaticProps, GetStaticPaths, GetStaticPropsResult, GetStaticPropsContext } from 'next'; // 确保 GetStaticPropsResult 和 GetStaticPropsContext 都被导入
-import { ParsedUrlQuery } from 'querystring'; // 导入 ParsedUrlQuery 类型
+import { GetStaticProps, GetStaticPaths, GetStaticPropsResult, GetStaticPropsContext } from 'next';
+import { ParsedUrlQuery } from 'querystring';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import NewsCard from '@/components/features/NewsCard';
-import { News, Category } from '@/types'; // 确保 News 和 Category 类型被正确导入
+import { News, Category } from '@/types';
 
 // 接口定义必须在 getStaticProps 使用它之前
 interface CategoryPageProps {
@@ -62,7 +62,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 // 为每个路径获取数据
 // 明确指定返回类型 GetStaticPropsResult，以帮助 TypeScript 验证
 export const getStaticProps: GetStaticProps<CategoryPageProps> = async (context: GetStaticPropsContext<ParsedUrlQuery>) => {
-  const { params } = context; // 从 context 中解构 params
+  const { params } = context;
   try {
     const { id: slug } = params as { id: string };
     
@@ -79,7 +79,7 @@ export const getStaticProps: GetStaticProps<CategoryPageProps> = async (context:
       return {
         notFound: true,
         revalidate: 60, // 1分钟后重试，确保不会永久缓存404
-      };
+      } as GetStaticPropsResult<CategoryPageProps>; // 显式断言
     }
     
     const categoryData = await categoryRes.json();
@@ -98,7 +98,7 @@ export const getStaticProps: GetStaticProps<CategoryPageProps> = async (context:
       return {
         notFound: true,
         revalidate: 60, // 1分钟后重试，确保不会永久缓存404
-      };
+      } as GetStaticPropsResult<CategoryPageProps>; // 显式断言
     }
     
     const newsData = await newsRes.json();
@@ -113,7 +113,7 @@ export const getStaticProps: GetStaticProps<CategoryPageProps> = async (context:
         lastUpdated: new Date().toISOString(),
       },
       revalidate: 900,
-    };
+    } as GetStaticPropsResult<CategoryPageProps>; // 显式断言
   } catch (error) {
     console.error('BUILD_LOG_CATEGORIES_ID: getStaticProps - Error:', error);
     
@@ -121,7 +121,7 @@ export const getStaticProps: GetStaticProps<CategoryPageProps> = async (context:
     return {
       notFound: true, // 或者返回默认数据，取决于你的业务逻辑
       revalidate: 60, // 1分钟后重试
-    };
+    } as GetStaticPropsResult<CategoryPageProps>; // 显式断言
   }
 };
 
