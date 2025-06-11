@@ -52,18 +52,16 @@ jobs:
         NODE_ENV: production # 部署时通常设置为 production
 
     - name: Deploy to Vercel (using Vercel CLI) # 修改步骤名称以反映新的部署方式
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }} # <-- 确保这一行在这里
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }} # <-- 确保这一行在这里
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       run: |
         # 安装 Vercel CLI
         npm install -g vercel
 
-        # 执行 Vercel 部署命令
-        # --prod 表示部署到生产环境
-        # --prebuilt (重要) 告诉 Vercel 已经构建了产物，直接部署。
-        # --confirm 自动确认部署提示
-        # 将 Vercel 认证相关的 Secrets 作为环境变量传递给 Vercel CLI
-        VERCEL_TOKEN=${{ secrets.VERCEL_TOKEN }} \
-        VERCEL_ORG_ID=${{ secrets.VERCEL_ORG_ID }} \
-        VERCEL_PROJECT_ID=${{ secrets.VERCEL_PROJECT_ID }} \
+        cd ./
+        
         vercel deploy --prod --prebuilt --confirm --debug # 添加 --debug 可在失败时获取更详细日志
 
       working-directory: ./
