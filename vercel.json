@@ -1,7 +1,7 @@
 {
   "version": 2,
   "name": "tech-news-platform",
-  "root": "next", 
+  "root": "./", 
   "env": { 
     "MONGO_URI": "@MONGO_URI",
     "REDIS_URL": "@REDIS_URL",
