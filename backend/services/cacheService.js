@@ -1,116 +1,138 @@
-// 移除Redis依赖，创建一个空服务
-// 定义一个空客户端对象，保持接口兼容性
-let client = {
-  quit: async () => 'OK',
-  on: () => {}
-};
-let redisAvailable = false;
+const { createRedisClient } = require('../config/redis');
 
-console.log('缓存功能已禁用');
+// 创建Redis客户端
+let client = createRedisClient();
+let redisAvailable = true;
+
+// 初始化Redis连接
+async function initializeRedis() {
+  try {
+    if (client.connect) {
+      await client.connect();
+    }
+    redisAvailable = true;
+    console.log('Redis缓存服务已启用');
+  } catch (error) {
+    redisAvailable = false;
+    console.error('Redis连接失败，缓存功能已禁用:', error.message);
+  }
+}
+
+// 初始化Redis
+initializeRedis().catch(err => {
+  console.error('Redis初始化错误:', err.message);
+});
 
 /**
- * 移除内存缓存实现，保留函数签名以保持兼容性
- */
-
-/**
- * 从缓存中获取数据 (已禁用)
+ * 从缓存中获取数据
  * @param {string} key - 缓存键
- * @returns {Promise<any>} - 始终返回null
+ * @returns {Promise<any>} - 缓存的数据或null
  */
 async function getCache(key) {
-  // 缓存功能已禁用，直接返回null
-  return null;
+  if (!redisAvailable) return null;
+  
+  try {
+    const data = await client.get(key);
+    if (!data) return null;
+    
+    return JSON.parse(data);
+  } catch (error) {
+    console.error(`获取缓存错误 [${key}]:`, error.message);
+    return null;
+  }
 }
 
 /**
- * 将数据存入缓存 (已禁用)
+ * 将数据存入缓存
  * @param {string} key - 缓存键
  * @param {any} data - 要缓存的数据
  * @param {number} ttl - 过期时间（秒），默认1小时
- * @returns {Promise<boolean>} - 始终返回true
+ * @returns {Promise<boolean>} - 是否成功
  */
 async function setCache(key, data, ttl = 3600) {
-  // 缓存功能已禁用，直接返回成功
-  return true;
+  if (!redisAvailable) return true;
+  
+  try {
+    const serialized = JSON.stringify(data);
+    await client.set(key, serialized, { EX: ttl });
+    return true;
+  } catch (error) {
+    console.error(`设置缓存错误 [${key}]:`, error.message);
+    return false;
+  }
 }
 
 /**
- * 删除缓存 (已禁用)
+ * 删除缓存
  * @param {string} key - 缓存键
- * @returns {Promise<boolean>} - 始终返回true
+ * @returns {Promise<boolean>} - 是否成功
  */
 async function deleteCache(key) {
-  // 缓存功能已禁用，直接返回成功
-  return true;
+  if (!redisAvailable) return true;
+  
+  try {
+    await client.del(key);
+    return true;
+  } catch (error) {
+    console.error(`删除缓存错误 [${key}]:`, error.message);
+    return false;
+  }
 }
 
 /**
- * 清除匹配模式的所有缓存 (已禁用)
+ * 清除匹配模式的所有缓存
  * @param {string} pattern - 缓存键模式，如 'news:*'
- * @returns {Promise<boolean>} - 始终返回true
+ * @returns {Promise<boolean>} - 是否成功
  */
 async function clearCachePattern(pattern) {
-  // 缓存功能已禁用，直接返回成功
-  return true;
+  if (!redisAvailable) return true;
+  
+  try {
+    let cursor = '0';
+    let keys = [];
+    
+    do {
+      const result = await client.scan(cursor, { MATCH: pattern, COUNT: 100 });
+      cursor = result.cursor;
+      keys = keys.concat(result.keys);
+    } while (cursor !== '0');
+    
+    if (keys.length > 0) {
+      for (const key of keys) {
+        await client.del(key);
+      }
+      console.log(`已清除${keys.length}个缓存项，模式: ${pattern}`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`清除缓存模式错误 [${pattern}]:`, error.message);
+    return false;
+  }
 }
 
 /**
- * 生成新闻列表的缓存键 (保留兼容性)
- * @param {Object} params - 查询参数
- * @returns {string} - 缓存键
+ * 关闭Redis连接
  */
-function generateNewsListCacheKey(params) {
-  const { page = 1, limit = 10, category, source, sortBy = 'publishedAt', order = 'desc' } = params;
-  return `news:list:${page}:${limit}:${category || 'all'}:${source || 'all'}:${sortBy}:${order}`;
+async function closeRedis() {
+  if (redisAvailable && client.quit) {
+    try {
+      await client.quit();
+      console.log('Redis连接已关闭');
+    } catch (error) {
+      console.error('关闭Redis连接错误:', error.message);
+    }
+  }
 }
 
-/**
- * 生成新闻详情的缓存键 (保留兼容性)
- * @param {string} newsId - 新闻ID
- * @returns {string} - 缓存键
- */
-function generateNewsCacheKey(newsId) {
-  return `news:detail:${newsId}`;
-}
-
-/**
- * 生成搜索结果的缓存键 (保留兼容性)
- * @param {string} query - 搜索查询
- * @param {Object} params - 其他查询参数
- * @returns {string} - 缓存键
- */
-function generateSearchCacheKey(query, params = {}) {
-  const { page = 1, limit = 10 } = params;
-  return `news:search:${query}:${page}:${limit}`;
-}
-
-/**
- * 检查Redis是否可用 (已禁用)
- * @returns {boolean} - 始终返回false
- */
-function isRedisAvailable() {
-  return false;
-}
-
-/**
- * 当新闻更新时，清除相关缓存 (已禁用)
- * @param {string} newsId - 新闻ID
- * @returns {Promise<void>}
- */
-async function invalidateNewsCache(newsId) {
-  // 缓存功能已禁用，不执行任何操作
-  return;
-}
+// 处理进程退出时关闭Redis连接
+process.on('SIGINT', closeRedis);
+process.on('SIGTERM', closeRedis);
 
 module.exports = {
-  client,
   getCache,
   setCache,
   deleteCache,
   clearCachePattern,
-  generateNewsListCacheKey,
-  generateNewsCacheKey,
-  generateSearchCacheKey,
-  invalidateNewsCache,
-  isRedisAvailable
+  closeRedis
 };

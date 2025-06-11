@@ -3,6 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   // output: 'standalone',
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   images: {
     domains: ['placeholder-api.com', 'blogger.googleusercontent.com', 'platform.theverge.com'], // 添加theverge域名
   },

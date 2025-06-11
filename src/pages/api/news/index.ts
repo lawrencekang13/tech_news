@@ -34,30 +34,30 @@ export default async function handler(
       console.warn('Redis cache error:', cacheError);
     }
 
-    // 构建查询条件
-    let query: any = { status: 'published' };
+    // 构建查询条件 - 移除status过滤，因为数据库中没有这个字段
+    let query: any = {};
     
     if (category && category !== 'all') {
       query.category = category;
     }
 
-    // 构建排序条件
+    // 构建排序条件 - 使用正确的字段名
     let sortCondition: any = {};
     switch (sort) {
       case 'views':
-        sortCondition = { views: -1, publishedAt: -1 };
+        sortCondition = { views: -1, publishDate: -1 };
         break;
       case 'likes':
-        sortCondition = { likes: -1, publishedAt: -1 };
+        sortCondition = { likes: -1, publishDate: -1 };
         break;
       default:
-        sortCondition = { publishedAt: -1 };
+        sortCondition = { publishDate: -1 };
     }
 
-    // 获取新闻列表和总数
+    // 获取新闻列表和总数 - 使用正确的字段名
     const [news, total] = await Promise.all([
       News.find(query)
-        .select('title summary author publishedAt category tags views likes comments thumbnail url')
+        .select('title summary author publishDate category tags views likes imageUrl source')
         .sort(sortCondition)
         .skip(skip)
         .limit(limitNum)

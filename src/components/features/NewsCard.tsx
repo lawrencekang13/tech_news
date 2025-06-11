@@ -91,14 +91,30 @@ const NewsCard: React.FC<NewsCardProps> = ({ news, isSaved = false, onSaveStatus
     <div className="card hover:translate-y-[-4px] transition-all duration-300">
       {/* 资讯图片 */}
       {news.imageUrl && (
-        <Link href={`/news/${news.id}`} className="block relative h-48 rounded-md overflow-hidden mb-4">
-          <Image 
-            src={news.imageUrl} 
-            alt={news.title}
-            fill
-            className="object-cover"
-          />
-        </Link>
+        news.sourceUrl ? (
+          <a 
+            href={news.sourceUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="block relative h-48 rounded-md overflow-hidden mb-4 cursor-pointer hover:opacity-90 transition-opacity"
+          >
+            <Image 
+              src={news.imageUrl} 
+              alt={news.title}
+              fill
+              className="object-cover"
+            />
+          </a>
+        ) : (
+          <div className="block relative h-48 rounded-md overflow-hidden mb-4">
+            <Image 
+              src={news.imageUrl} 
+              alt={news.title}
+              fill
+              className="object-cover"
+            />
+          </div>
+        )
       )}
 
       {/* 资讯元信息 */}
@@ -113,9 +129,18 @@ const NewsCard: React.FC<NewsCardProps> = ({ news, isSaved = false, onSaveStatus
 
       {/* 资讯标题 */}
       <h2 className="text-xl font-bold mb-2 line-clamp-2 hover:text-primary-600 transition-colors">
-        <Link href={`/news/${news.id}`}>
-          {news.title}
-        </Link>
+        {news.sourceUrl ? (
+          <a 
+            href={news.sourceUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="hover:text-primary-600 transition-colors"
+          >
+            {news.title}
+          </a>
+        ) : (
+          <span>{news.title}</span>
+        )}
       </h2>
 
       {/* AI小总结 */}

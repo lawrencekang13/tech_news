@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import NewsCard from '@/components/features/NewsCard';
 import CategoryFilter from '@/components/features/CategoryFilter';
@@ -20,9 +20,9 @@ const fetchNews = async (categorySlug: string = '') => {
     }
     
     const result = await res.json();
-    // 后端返回的数据结构是 {success: true, data: {news: [...], pagination: {...}}}
-    // 我们需要提取 news 数组
-    return result.data?.news || [];
+    // 后端返回的数据结构是 {success: true, data: [...], pagination: {...}}
+    // 我们需要提取 data 数组
+    return result.data || [];
   } catch (error) {
     console.error('获取新闻数据失败:', error);
     // 返回空数组，让UI显示加载失败状态
