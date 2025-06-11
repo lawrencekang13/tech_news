@@ -15,8 +15,8 @@ const nextConfig = {
   // === 添加以下 env 配置 ===
   // next.config.js 错误的 env 语法
   env: {
-    NEXT_PUBLIC_API_BASE_URL: ${process.env.VERCEL_URL} || 'http://localhost:3000', // <-- 错误在这里
-  }
+    // 正确的 JavaScript 语法：使用三元运算符和反引号 `` ` `` 包裹模板字符串
+    NEXT_PUBLIC_API_BASE_URL: process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000',
     // 确保你的 .env.local 中的其他 NEXT_PUBLIC_ 变量也在这里被引用
     // 例如：
     // NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
