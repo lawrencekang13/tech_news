@@ -1,7 +1,6 @@
 {
   "version": 2,
   "name": "tech-news-platform",
-  "root": "./", # 确保 root 属性存在且为 "./" (因为你的 Next.js 应用在仓库根目录)
   "functions": {
     "pages/api/**/*.js": {
       "maxDuration": 30
