@@ -31,8 +31,6 @@ jobs:
     - name: Build project
       run: npm run build
       env:
-        # 这些环境变量仅在GitHub Actions的"Build project"步骤中可用
-        # NEXT_PUBLIC_XXX 变量在前端构建时会嵌入代码
         MONGO_URI: ${{ secrets.MONGO_URI }}
         REDIS_URL: ${{ secrets.REDIS_URL }}
         REDIS_TOKEN: ${{ secrets.REDIS_TOKEN }}
@@ -47,18 +45,13 @@ jobs:
         CACHE_TTL_TRENDING: ${{ secrets.CACHE_TTL_TRENDING }}
         NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
         NEWS_API_BASE_URL: ${{ secrets.NEWS_API_BASE_URL }}
-        NODE_ENV: production # 部署时通常设置为 production
+        NODE_ENV: production
 
     - name: Deploy to Vercel (using Vercel CLI)
-      # 这些环境变量会在整个 'run' 脚本的shell环境中可用，包括 'vercel deploy' 命令
       env:
-        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }} # Vercel API Token (必需)
-        # VERCEL_ORG_ID 和 VERCEL_PROJECT_ID 理论上可以通过 vercel.json 或 vercel link 自动识别
-        # 如果依然报错，可以根据需要取消下方注释
-        # VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        # VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-        # 将所有应用需要的环境变量也在这里列出，供 Vercel 运行时使用
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         MONGO_URI: ${{ secrets.MONGO_URI }}
         REDIS_URL: ${{ secrets.REDIS_URL }}
         REDIS_TOKEN: ${{ secrets.REDIS_TOKEN }}
@@ -75,24 +68,11 @@ jobs:
         NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
         NEWS_API_BASE_URL: ${{ secrets.NEWS_API_BASE_URL }}
         NODE_ENV: production
-
       run: |
-        # 安装 Vercel CLI
         npm install -g vercel
-
-        # Vercel CLI 默认会在 working-directory 中查找项目文件。
-        # 如果你的 Next.js 应用就在仓库根目录，无需额外的 cd 命令。
-        # cd ./ 
-
-        # 执行 Vercel 部署命令
-        # --prod 表示部署到生产环境
-        # --confirm 自动确认部署提示
-        # --debug (可选，仅用于调试) 添加此项可在失败时获取更详细日志
-        # Vercel CLI 会自动从环境变量 (VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID) 获取凭据和项目信息。
-        # 不再显式传递 --token, --scope, --project 参数。
-        vercel deploy --prod --confirm --debug
-
-      working-directory: ./ # 确认这里是你的 Next.js 应用的实际根目录 (仓库根目录)
+        # cd ./ # 此行可省略，因为 working-directory 已经设置
+        vercel deploy --prod --confirm --debug --token=${{ secrets.VERCEL_TOKEN }} # 移除了 --token 后的续行符
+      working-directory: ./
 
   rss-fetch:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -106,7 +86,5 @@ jobs:
           -H "x-api-key: ${{ secrets.RSS_API_KEY }}" \
           -d '{}'
       env:
-        # VERCEL_DEPLOYMENT_URL 通常由 Vercel Action 在部署成功后自动提供
-        # 确保 RSS_API_KEY 已在 GitHub Secrets 中定义
         VERCEL_DEPLOYMENT_URL: ${{ secrets.VERCEL_DEPLOYMENT_URL }}
-        RSS_API_KEY: ${{ secrets.RSS_API_KEY }} # 确保这个 Secret 存在且值正确
+        RSS_API_KEY: ${{ secrets.RSS_API_KEY }}
