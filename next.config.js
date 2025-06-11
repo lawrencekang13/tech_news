@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   // 确保 output: 'standalone' 存在，这对于部署到 Vercel 或其他 Serverless 环境很有用
-  output: 'standalone',
+  // output: 'standalone',
   pageExtensions: ['ts', 'tsx', 'js', 'jsx'],
   images: {
     domains: ["placeholder.com", "blogger.googleusercontent.com", "platform.theverge.com"], // 确保这里包含你的图片域名
