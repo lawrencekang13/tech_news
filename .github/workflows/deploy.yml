@@ -63,14 +63,9 @@ jobs:
         # 切换到 Next.js 应用的根目录 (此行可省略，因为 working-directory 已经设置)
         # cd ./ 
 
-        # 执行 Vercel 部署命令
-        # --prod 表示部署到生产环境
-        # --prebuilt (重要) 告诉 Vercel 已经构建了产物，直接部署。
-        # --confirm 自动确认部署提示
-        # --debug (可选) 添加 --debug 可在失败时获取更详细日志
-        # 将 Vercel 认证相关的 Secrets 作为命令行参数传递给 Vercel CLI
         vercel deploy --prod --prebuilt --confirm --debug \
           --token=${{ secrets.VERCEL_TOKEN }} \
+          
       working-directory: ./ # 确认这里是你的 Next.js 应用的实际根目录
 
   rss-fetch:
