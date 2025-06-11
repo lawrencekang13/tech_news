@@ -33,23 +33,23 @@ jobs:
 
     - name: Build project
       run: npm run build
-      env:
+      # env:
         # 正确引用 GitHub Secrets 作为环境变量
-        MONGO_URI: ${{ secrets.MONGO_URI }}
-        REDIS_URL: ${{ secrets.REDIS_URL }}
-        REDIS_TOKEN: ${{ secrets.REDIS_TOKEN }}
-        NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-        NEXT_PUBLIC_APP_NAME: ${{ secrets.NEXT_PUBLIC_APP_NAME }}
-        NEXT_PUBLIC_APP_VERSION: ${{ secrets.NEXT_PUBLIC_APP_VERSION }}
-        RSS_SOURCES: ${{ secrets.RSS_SOURCES }}
-        CACHE_TTL_NEWS_LIST: ${{ secrets.CACHE_TTL_NEWS_LIST }}
-        CACHE_TTL_NEWS_DETAIL: ${{ secrets.CACHE_TTL_NEWS_DETAIL }}
-        CACHE_TTL_TRENDING: ${{ secrets.CACHE_TTL_TRENDING }}
-        NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
-        NEWS_API_BASE_URL: ${{ secrets.NEWS_API_BASE_URL }}
-        NODE_ENV: production # 部署时通常设置为 production
+        #MONGO_URI: ${{ secrets.MONGO_URI }}
+        #REDIS_URL: ${{ secrets.REDIS_URL }}
+        #REDIS_TOKEN: ${{ secrets.REDIS_TOKEN }}
+        #NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+        #NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+        #NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+        #NEXT_PUBLIC_APP_NAME: ${{ secrets.NEXT_PUBLIC_APP_NAME }}
+        #NEXT_PUBLIC_APP_VERSION: ${{ secrets.NEXT_PUBLIC_APP_VERSION }}
+        #RSS_SOURCES: ${{ secrets.RSS_SOURCES }}
+        #CACHE_TTL_NEWS_LIST: ${{ secrets.CACHE_TTL_NEWS_LIST }}
+        #CACHE_TTL_NEWS_DETAIL: ${{ secrets.CACHE_TTL_NEWS_DETAIL }}
+        #CACHE_TTL_TRENDING: ${{ secrets.CACHE_TTL_TRENDING }}
+        #NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
+        #NEWS_API_BASE_URL: ${{ secrets.NEWS_API_BASE_URL }}
+        #NODE_ENV: production # 部署时通常设置为 production
 
     - name: Deploy to Vercel
       uses: amondnet/vercel-action@v25
@@ -61,6 +61,24 @@ jobs:
         working-directory: ./ # 假设你的 Next.js 项目在仓库根目录。
                               # 如果你的 Next.js 项目在 'frontend/' 目录下，请改为 './frontend/'
                               # 同时，确保你的 Vercel 项目设置中的 "Root Directory" 也设置为 'frontend/'。
+
+    # 🚀 新增或修改：使用 build-env 来传递所有环境变量
+        build-env: |
+          MONGO_URI=${{ secrets.MONGO_URI }}
+          REDIS_URL=${{ secrets.REDIS_URL }}
+          REDIS_TOKEN=${{ secrets.REDIS_TOKEN }}
+          NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+          RSS_SOURCES=${{ secrets.RSS_SOURCES }}
+          RSS_API_KEY=${{ secrets.RSS_API_KEY }}
+          NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME }}
+          NEXT_PUBLIC_APP_VERSION=${{ secrets.NEXT_PUBLIC_APP_VERSION }}
+          CACHE_TTL_NEWS_LIST=${{ secrets.CACHE_TTL_NEWS_LIST }}
+          CACHE_TTL_NEWS_DETAIL=${{ secrets.CACHE_TTL_NEWS_DETAIL }}
+          CACHE_TTL_TRENDING=${{ secrets.CACHE_TTL_TRENDING }}
+          NEWS_API_KEY=${{ secrets.NEWS_API_KEY }}
+          NEWS_API_BASE_URL=${{ secrets.NEWS_API_BASE_URL }}
+          NODE_ENV=production
 
   rss-fetch:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
