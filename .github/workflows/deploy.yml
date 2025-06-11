@@ -71,7 +71,6 @@ jobs:
         # 将 Vercel 认证相关的 Secrets 作为命令行参数传递给 Vercel CLI
         vercel deploy --prod --prebuilt --confirm --debug \
           --token=${{ secrets.VERCEL_TOKEN }} \
-          --project=${{ secrets.VERCEL_PROJECT_ID }}
       working-directory: ./ # 确认这里是你的 Next.js 应用的实际根目录
 
   rss-fetch:
