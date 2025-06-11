@@ -59,9 +59,7 @@ jobs:
         vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
         vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
         working-directory: ./next/ # 假设你的 Next.js 项目在仓库根目录。
-                              # 如果你的 Next.js 项目在 'frontend/' 目录下，请改为 './frontend/'
-                              # 同时，确保你的 Vercel 项目设置中的 "Root Directory" 也设置为 'frontend/'。
-
+        vercel-version: 'latest'                     
 
   rss-fetch:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
