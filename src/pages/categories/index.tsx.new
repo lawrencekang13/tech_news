@@ -1,0 +1,8 @@
+At line:1 char:31
++ ... ReadAllText c:\Programming\Trae_Develop\src\pages\categories\index.ts ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Unexpected token 'c:\Programming\Trae_Develop\src\pages\categories\index.tsx' in expre
+ssion or statement.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : UnexpectedToken
+ 

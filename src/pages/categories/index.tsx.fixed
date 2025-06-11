@@ -1,0 +1,93 @@
+import React from 'react';
+import { GetStaticPaths, GetStaticProps } from 'next';
+import { useRouter } from 'next/router';
+import { ParsedUrlQuery } from 'querystring';
+import { getAllCategories, getCategoryBySlug } from '@/lib/api';
+import { Category, News } from '@/interfaces';
+import NewsCard from '@/components/NewsCard';
+import Layout from '@/components/Layout';
+import Head from 'next/head';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const categories = await getAllCategories();
+  
+  return {
+    paths: categories.map((category) => ({
+      params: { slug: category.slug },
+    })),
+    fallback: 'blocking',
+  };
+};
+
+const createDefaultCategory = (): Category => ({
+  id: 0,
+  name: '鏈煡鍒嗙被',
+  slug: 'unknown',
+  description: '鏈壘鍒拌鍒嗙被',
+  news: [],
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+});
+
+interface IParams extends ParsedUrlQuery {
+  slug: string;
+}
+
+export const getStaticProps: GetStaticProps = async (context) => {
+  const { slug } = context.params as IParams;
+  const category = await getCategoryBySlug(slug) || createDefaultCategory();
+  
+  return {
+    props: {
+      category,
+      lastUpdated: new Date().toISOString(),
+    },
+    revalidate: 60, // 姣忓垎閽熼噸鏂扮敓鎴愰〉闈?
+  };
+};
+
+interface CategoryPageProps {
+  category: Category;
+  lastUpdated: string;
+}
+
+const CategoryPage: React.FC<CategoryPageProps> = ({ category, lastUpdated }) => {
+  const router = useRouter();
+  const { name, description, news = [] } = category;
+
+  if (router.isFallback) {
+    return <div>鍔犺浇涓?..</div>;
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <Head>
+        <title>{name} - 鏂伴椈鍒嗙被</title>
+        <meta name="description" content={description} />
+      </Head>
+
+      <Layout>
+        <h1 className="text-3xl font-bold mb-4">{name}</h1>
+        <p className="text-gray-600 mb-8">{description}</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {news.map((item) => (
+            <NewsCard key={item.id} news={item} />
+          ))}
+        </div>
+
+        {news.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-xl text-secondary-500">鏆傛棤鐩稿叧璧勮</p>
+          </div>
+        )}
+
+        <div className="text-sm text-secondary-500 mt-8 text-right">
+          鏈€鍚庢洿鏂? {new Date(lastUpdated).toLocaleString()}
+        </div>
+      </Layout>
+    </div>
+  );
+};
+
+export default CategoryPage;
