@@ -55,20 +55,25 @@ jobs:
       env:
         VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }} # <-- 确保这一行在这里
         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }} # <-- 确保这一行在这里
-        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }} # <-- 确保这一行在这里
       run: |
         # 安装 Vercel CLI
         npm install -g vercel
 
-        cd ./
+        # 切换到 Next.js 应用的根目录 (此行可省略，因为 working-directory 已经设置)
+        # cd ./ 
 
-        ercel deploy --prod --prebuilt --confirm --debug \
+        # 执行 Vercel 部署命令
+        # --prod 表示部署到生产环境
+        # --prebuilt (重要) 告诉 Vercel 已经构建了产物，直接部署。
+        # --confirm 自动确认部署提示
+        # --debug (可选) 添加 --debug 可在失败时获取更详细日志
+        # 将 Vercel 认证相关的 Secrets 作为命令行参数传递给 Vercel CLI
+        vercel deploy --prod --prebuilt --confirm --debug \
           --token=${{ secrets.VERCEL_TOKEN }} \
           --scope=${{ secrets.VERCEL_ORG_ID }} \
           --project=${{ secrets.VERCEL_PROJECT_ID }}
-        vercel deploy --prod --prebuilt --confirm --debug # 添加 --debug 可在失败时获取更详细日志
-
-      working-directory: ./
+      working-directory: ./ # 确认这里是你的 Next.js 应用的实际根目录
 
   rss-fetch:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
