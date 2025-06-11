@@ -61,7 +61,11 @@ jobs:
         npm install -g vercel
 
         cd ./
-        
+
+        ercel deploy --prod --prebuilt --confirm --debug \
+          --token=${{ secrets.VERCEL_TOKEN }} \
+          --scope=${{ secrets.VERCEL_ORG_ID }} \
+          --project=${{ secrets.VERCEL_PROJECT_ID }}
         vercel deploy --prod --prebuilt --confirm --debug # 添加 --debug 可在失败时获取更详细日志
 
       working-directory: ./
