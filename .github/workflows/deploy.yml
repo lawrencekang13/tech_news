@@ -56,6 +56,7 @@ jobs:
       with:
         # 正确引用 GitHub Secrets 作为 Vercel Action 的输入参数
         vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
         vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
         working-directory: ./ # 假设你的 Next.js 项目在仓库根目录。
                               # 如果你的 Next.js 项目在 'frontend/' 目录下，请改为 './frontend/'
