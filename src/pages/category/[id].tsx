@@ -20,9 +20,8 @@ interface CategoryPageProps {
 export const getStaticPaths: GetStaticPaths = async () => {
   try {
     // 获取所有分类的slug
-    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-    const host = process.env.VERCEL_URL || 'localhost:3000';
-    const apiUrl = `${protocol}://${host}/api/categories?nav=true`;
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+    const apiUrl = `${API_BASE_URL}/api/categories?nav=true`;
     
     const res = await fetch(apiUrl);
     
@@ -61,9 +60,8 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     const { id: slug } = params as { id: string };
     
     // 获取分类详情
-    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-    const host = process.env.VERCEL_URL || 'localhost:3000';
-    const categoryUrl = `${protocol}://${host}/api/categories/${slug}`;
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+    const categoryUrl = `${API_BASE_URL}/api/categories/${slug}`;
     
     const categoryRes = await fetch(categoryUrl);
     
@@ -75,7 +73,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     const category = categoryData.data || createDefaultCategory(slug);
     
     // 获取该分类下的新闻
-    const newsUrl = `${protocol}://${host}/api/category/${slug}?page=1`;
+    const newsUrl = `${API_BASE_URL}/api/category/${slug}?page=1`;
     
     const newsRes = await fetch(newsUrl);
     

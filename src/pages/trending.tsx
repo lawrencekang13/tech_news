@@ -13,9 +13,8 @@ interface TrendingPageProps {
 export const getServerSideProps: GetServerSideProps = async () => {
   try {
     // 在服务器端调用API获取热门新闻
-    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-    const host = process.env.VERCEL_URL || 'localhost:3000';
-    const apiUrl = `${protocol}://${host}/api/news/trending?limit=10`;
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+    const apiUrl = `${API_BASE_URL}/api/news/trending?limit=10`;
     
     const res = await fetch(apiUrl);
     
