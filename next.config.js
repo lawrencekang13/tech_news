@@ -13,11 +13,10 @@ const nextConfig = {
   },
 
   // === 添加以下 env 配置 ===
+  // next.config.js 错误的 env 语法
   env: {
-    // 在 Vercel 构建时，VERCEL_URL 环境变量会自动由 Vercel 注入，
-    // 它包含了部署的完整 URL (例如 https://your-deployment-url.vercel.app)。
-    // 我们利用它来构建 NEXT_PUBLIC_API_BASE_URL。
-    NEXT_PUBLIC_API_BASE_URL: `https://${process.env.VERCEL_URL}` : 'http://localhost:3000',
+    NEXT_PUBLIC_API_BASE_URL: ${process.env.VERCEL_URL} || 'http://localhost:3000', // <-- 错误在这里
+  }
     // 确保你的 .env.local 中的其他 NEXT_PUBLIC_ 变量也在这里被引用
     // 例如：
     // NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
