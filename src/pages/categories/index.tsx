@@ -1,116 +1,90 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { GetStaticProps, GetStaticPaths } from 'next';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
-import Link from 'next/link';
-import { useQuery } from 'react-query';
-import * as categoryService from '@/services/categoryService';
-import { Category } from '@/types';
+import NewsCard from '@/components/features/NewsCard';
+import { News, Category } from '@/types';
 
-const CategoriesPage: React.FC = () => {
-  // 获取所有分类
-  const { data: categories = [], isLoading, isError } = useQuery(
-    'allCategories',
-    () => categoryService.getAllCategories(),
-    {
-      staleTime: 60 * 60 * 1000, // 1小时
+interface CategoryPageProps {
+  category: Category;
+  news: News[];
+  pagination: {
+    total: number;
+    page: number;
+    pageSize: number;
+  };
+  lastUpdated: string;
+}
+
+// 获取所有可能的路径
+export const getStaticPaths: GetStaticPaths = async () => {
+  try {
+    // 获取所有分类的slug
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+    const apiUrl = `${API_BASE_URL}/api/categories?nav=true`;
+    
+    console.log('BUILD_LOG_CATEGORIES_ID: getStaticPaths - Fetching categories from:', apiUrl); // <-- 添加日志
+    const res = await fetch(apiUrl);
+    
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`BUILD_LOG_CATEGORIES_ID: getStaticPaths - API response not OK: ${res.status} - ${errorText}`); // <-- 详细错误日志
+      throw new Error(`获取分类失败: ${res.status}`);
     }
-  );
-
-  // 按照父分类ID对分类进行分组
-  const groupedCategories = React.useMemo(() => {
-    const grouped: Record<string, Category[]> = {};
     
-    // 先找出所有顶级分类（没有父分类的）
-    const topLevelCategories = categories.filter((category: Category) => !category.parentId);
+    const data = await res.json();
+    console.log('BUILD_LOG_CATEGORIES_ID: getStaticPaths - API response data:', JSON.stringify(data, null, 2)); // <-- 打印完整数据
     
-    // 将顶级分类作为键，对应的值是该顶级分类下的所有子分类
-    topLevelCategories.forEach((topCategory: Category) => {
-      grouped[topCategory.id as keyof typeof grouped] = categories.filter(
-        (category: Category) => category.parentId === topCategory.id
-      );
-    });
+    const categories = data.data || [];
+    
+    // 为每个分类生成路径
+    const paths = categories.map((category: Category) => ({
+      params: { id: category.slug },
+    }));
     
     return {
-      topLevel: topLevelCategories,
-      grouped
+      paths,
+      // fallback: true 表示如果请求的路径不在预渲染的路径中，
+      // Next.js 将在客户端渲染页面
+      fallback: true,
     };
-  }, [categories]);
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-secondary-200 rounded w-1/3 mb-4"></div>
-          <div className="h-4 bg-secondary-200 rounded w-2/3 mb-8"></div>
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-20 bg-secondary-200 rounded mb-4"></div>
-          ))}
-        </div>
-      </div>
-    );
+  } catch (error) {
+    console.error('BUILD_LOG_CATEGORIES_ID: getStaticPaths - Error:', error); // <-- 捕获错误日志
+    
+    // 出错时返回空路径
+    return {
+      paths: [],
+      fallback: true,
+    };
   }
-
-  if (isError) {
-    return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <div className="text-danger mb-2">获取分类列表失败</div>
-        <button 
-          className="btn-primary"
-          onClick={() => window.location.reload()}
-        >
-          重试
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <Head>
-        <title>全部分类 - 科技前沿资讯</title>
-        <meta name="description" content="浏览所有科技前沿资讯分类" />
-      </Head>
-      
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">全部分类</h1>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* 渲染顶级分类 */}
-          {groupedCategories.topLevel.map((category: Category) => (
-            <div key={category.id} className="border border-secondary-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-              <Link href={`/categories/${category.slug}`} className="block">
-                <h2 className="text-xl font-semibold mb-3 text-primary-600 hover:text-primary-700 transition-colors">
-                  {category.icon && <span className="mr-2">{category.icon}</span>}
-                  {category.name}
-                </h2>
-              </Link>
-              
-              {category.description && (
-                <p className="text-secondary-600 mb-4 text-sm">{category.description}</p>
-              )}
-              
-              {/* 渲染子分类 */}
-              {groupedCategories.grouped[category.id as keyof typeof groupedCategories.grouped]?.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-sm font-medium text-secondary-700 mb-2">相关分类：</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {groupedCategories.grouped[category.id as keyof typeof groupedCategories.grouped].map((subCategory: Category) => (
-                      <Link 
-                        key={subCategory.id} 
-                        href={`/categories/${subCategory.slug}`}
-                        className="text-xs bg-secondary-100 text-secondary-700 px-2 py-1 rounded hover:bg-secondary-200 transition-colors"
-                      >
-                        {subCategory.name}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
-  );
 };
 
-export default CategoriesPage;
+// 为每个路径获取数据
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  try {
+    const { id: slug } = params as { id: string };
+    
+    // 获取分类详情
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+    const categoryUrl = `<span class="math-inline">\{API\_BASE\_URL\}/api/categories/</span>{slug}`;
+    
+    console.log('BUILD_LOG_CATEGORIES_ID: getStaticProps - Fetching category detail from:', categoryUrl); // <-- 添加日志
+    const categoryRes = await fetch(categoryUrl);
+    
+    if (!categoryRes.ok) {
+      const errorText = await categoryRes.text();
+      console.error(`BUILD_LOG_CATEGORIES_ID: getStaticProps - Category API response not OK: ${categoryRes.status} - ${errorText}`); // <-- 详细错误日志
+      throw new Error(`获取分类详情失败: ${categoryRes.status}`);
+    }
+    
+    const categoryData = await categoryRes.json();
+    console.log('BUILD_LOG_CATEGORIES_ID: getStaticProps - Category API response data:', JSON.stringify(categoryData, null, 2)); // <-- 打印完整数据
+    const category = categoryData.data || createDefaultCategory(slug);
+    
+    // 获取该分类下的新闻
+    const newsUrl = `<span class="math-inline">\{API\_BASE\_URL\}/api/category/</span>{slug}?page=1`;
+    
+    console.log('BUILD_LOG_CATEGORIES_ID: getStaticProps - Fetching category news from:', newsUrl); // <-- 添加日志
+    const newsRes = await fetch(newsUrl);
+    
+    if (!newsRes.ok) {

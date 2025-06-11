@@ -16,13 +16,17 @@ export const getServerSideProps: GetServerSideProps = async () => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
     const apiUrl = `${API_BASE_URL}/api/news/trending?limit=10`;
     
+    console.log('BUILD_LOG_TRENDING: getServerSideProps - Fetching trending news from:', apiUrl); // <-- 添加日志
     const res = await fetch(apiUrl);
     
     if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`BUILD_LOG_TRENDING: getServerSideProps - API response not OK: ${res.status} - ${errorText}`); // <-- 详细错误日志
       throw new Error(`获取热门新闻失败: ${res.status}`);
     }
     
     const data = await res.json();
+    console.log('BUILD_LOG_TRENDING: getServerSideProps - API response data:', JSON.stringify(data, null, 2)); // <-- 打印完整数据
     
     // 返回props给页面组件
     return {
@@ -30,12 +34,11 @@ export const getServerSideProps: GetServerSideProps = async () => {
         trendingNews: data.data?.news || [],
         lastUpdated: new Date().toISOString(),
       },
-      // 设置页面重新生成的时间间隔（秒）
-      // 每10分钟重新获取数据
-      revalidate: 600,
+      // 注意: getServerSideProps 不支持 revalidate 属性
+      // revalidate: 600, // 此行应被移除或注释掉
     };
   } catch (error) {
-    console.error('获取热门新闻失败:', error);
+    console.error('BUILD_LOG_TRENDING: getServerSideProps - Error:', error); // <-- 捕获错误日志
     
     // 出错时返回空数据
     return {
