@@ -1,6 +1,7 @@
 {
   "version": 2,
   "name": "tech-news-platform",
+  "root": "next", 
 
   "functions": {
     "pages/api/**/*.js": {
