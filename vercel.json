@@ -1,7 +1,7 @@
 {
   "version": 2,
   "name": "tech-news-platform",
-  "env": { 
+  "env": {
     "MONGO_URI": "@MONGO_URI",
     "REDIS_URL": "@REDIS_URL",
     "REDIS_TOKEN": "@REDIS_TOKEN",
@@ -18,7 +18,6 @@
     "NEWS_API_BASE_URL": "@NEWS_API_BASE_URL",
     "NODE_ENV": "production"
   },
-
   "functions": {
     "pages/api/**/*.js": {
       "maxDuration": 30
