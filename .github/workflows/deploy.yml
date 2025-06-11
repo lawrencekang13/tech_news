@@ -14,39 +14,70 @@ jobs:
   deploy:
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
-        
+
     - name: Install dependencies
       run: npm ci
-      
+
     - name: Build project
       run: npm run build
       env:
         MONGO_URI: ${{ secrets.MONGO_URI }}
         REDIS_URL: ${{ secrets.REDIS_URL }}
         REDIS_TOKEN: ${{ secrets.REDIS_TOKEN }}
-        
-    - name: Deploy to Vercel
-      uses: amondnet/vercel-action@v25
-      with:
-        vercel-token: ${{ secrets.VERCEL_TOKEN }}
-        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-        working-directory: ./
-        
+        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+        NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+        NEXT_PUBLIC_APP_NAME: ${{ secrets.NEXT_PUBLIC_APP_NAME }}
+        NEXT_PUBLIC_APP_VERSION: ${{ secrets.NEXT_PUBLIC_APP_VERSION }}
+        RSS_SOURCES: ${{ secrets.RSS_SOURCES }}
+        CACHE_TTL_NEWS_LIST: ${{ secrets.CACHE_TTL_NEWS_LIST }}
+        CACHE_TTL_NEWS_DETAIL: ${{ secrets.CACHE_TTL_NEWS_DETAIL }}
+        CACHE_TTL_TRENDING: ${{ secrets.CACHE_TTL_TRENDING }}
+        NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
+        NEWS_API_BASE_URL: ${{ secrets.NEWS_API_BASE_URL }}
+        NODE_ENV: production
+
+    - name: Deploy to Vercel (using Vercel CLI)
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        MONGO_URI: ${{ secrets.MONGO_URI }}
+        REDIS_URL: ${{ secrets.REDIS_URL }}
+        REDIS_TOKEN: ${{ secrets.REDIS_TOKEN }}
+        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+        NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+        NEXT_PUBLIC_APP_NAME: ${{ secrets.NEXT_PUBLIC_APP_NAME }}
+        NEXT_PUBLIC_APP_VERSION: ${{ secrets.NEXT_PUBLIC_APP_VERSION }}
+        RSS_SOURCES: ${{ secrets.RSS_SOURCES }}
+        RSS_API_KEY: ${{ secrets.RSS_API_KEY }}
+        CACHE_TTL_NEWS_LIST: ${{ secrets.CACHE_TTL_NEWS_LIST }}
+        CACHE_TTL_NEWS_DETAIL: ${{ secrets.CACHE_TTL_NEWS_DETAIL }}
+        CACHE_TTL_TRENDING: ${{ secrets.CACHE_TTL_TRENDING }}
+        NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
+        NEWS_API_BASE_URL: ${{ secrets.NEWS_API_BASE_URL }}
+        NODE_ENV: production
+      run: |
+        npm install -g vercel
+        # cd ./ # 此行可省略，因为 working-directory 已经设置
+        vercel deploy --prod --confirm --debug --token=${{ secrets.VERCEL_TOKEN }} # 移除了 --token 后的续行符
+      working-directory: ./
+
   rss-fetch:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Fetch RSS Data
       run: |
@@ -56,3 +87,4 @@ jobs:
           -d '{}'
       env:
         VERCEL_DEPLOYMENT_URL: ${{ secrets.VERCEL_DEPLOYMENT_URL }}
+        RSS_API_KEY: ${{ secrets.RSS_API_KEY }}
