@@ -45,7 +45,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
   try {
     // 构建 API URL，确保是完整的 URL
     const apiUrl = `${API_BASE_URL}/api/news/trending?limit=10`;
-    console.log('Fetching trending news for getStaticPaths from:', apiUrl); // 添加日志，便于调试
+    console.log('BUILD_LOG_NEWS_ID: getStaticPaths - Fetching trending news from:', apiUrl); // <-- 添加日志
 
     const res = await fetch(apiUrl);
     
@@ -55,6 +55,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
     }
     
     const data = await res.json();
+    console.log('BUILD_LOG_NEWS_ID: getStaticPaths - API response data:', JSON.stringify(data, null, 2)); // <-- 打印完整数据
     const trendingNews = data.data?.news || [];
     
     // 为每个热门新闻生成路径
@@ -70,7 +71,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
       fallback: 'blocking',
     };
   } catch (error) {
-    console.error('获取新闻路径失败:', error);
+    console.error('BUILD_LOG_NEWS_ID: getStaticPaths - Error:', error); // <-- 捕获错误日志
     // 出错时返回空路径，并使用 fallback: 'blocking'
     // 这样未预渲染的路径将在请求时 SSR
     return {
@@ -87,14 +88,17 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     
     // 获取新闻详情
     const newsUrl = `${API_BASE_URL}/api/news/${id}`;
-    console.log('Fetching news detail for getStaticProps from:', newsUrl); // 添加日志
+    console.log('BUILD_LOG_NEWS_ID: getStaticProps - Fetching news detail from:', newsUrl); // <-- 添加日志
     const newsRes = await fetch(newsUrl);
     
     if (!newsRes.ok) {
+      const errorText = await newsRes.text();
+      console.error(`BUILD_LOG_NEWS_ID: getStaticProps - News detail API response not OK: ${newsRes.status} - ${errorText}`); // <-- 详细错误日志
       throw new Error(`获取新闻详情失败: ${newsRes.status} - ${newsRes.statusText}`);
     }
     
     const newsData = await newsRes.json();
+    console.log('BUILD_LOG_NEWS_ID: getStaticProps - News detail API response data:', JSON.stringify(newsData, null, 2)); // <-- 打印完整数据
     const news: News = newsData.data; // 确保newsData.data是News类型
     
     if (!news) {
@@ -107,12 +111,13 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     
     // 获取相关新闻
     const relatedNewsUrl = `${API_BASE_URL}/api/news?category=${news.category}&limit=3`;
-    console.log('Fetching related news for getStaticProps from:', relatedNewsUrl); // 添加日志
+    console.log('BUILD_LOG_NEWS_ID: getStaticProps - Fetching related news from:', relatedNewsUrl); // <-- 添加日志
     const relatedNewsRes = await fetch(relatedNewsUrl);
     let relatedNews: News[] = [];
     
     if (relatedNewsRes.ok) {
       const relatedNewsData = await relatedNewsRes.json();
+      console.log('BUILD_LOG_NEWS_ID: getStaticProps - Related news API response data:', JSON.stringify(relatedNewsData, null, 2)); // <-- 打印完整数据
       relatedNews = (relatedNewsData.data?.news || []).filter(
         (item: News) => item.id !== news.id
       ).slice(0, 3);
@@ -130,7 +135,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       revalidate: 3600, 
     };
   } catch (error) {
-    console.error('获取新闻详情失败:', error);
+    console.error('BUILD_LOG_NEWS_ID: getStaticProps - Error:', error); // <-- 捕获错误日志
     
     // 如果获取数据失败，返回404，并在 revalidate 后重试
     return {
