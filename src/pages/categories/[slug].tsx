@@ -1,5 +1,13 @@
 // src/pages/categories/[slug].tsx
 
+import React, { useState } from 'react';
+// 修正：确保 GetStaticPaths 和 GetStaticProps 都被导入
+import { GetStaticProps, GetStaticPaths } from 'next'; 
+import { useRouter } from 'next/router';
+import Head from 'next/head';
+import NewsCard from '@/components/features/NewsCard';
+import { News, Category } from '@/types';
+
 // ... (imports and interface CategoryPageProps remain the same)
 
 // 获取所有可能的路径
