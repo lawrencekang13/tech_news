@@ -1,7 +1,8 @@
 // src/pages/categories/[slug].tsx
 
 import React, { useState } from 'react';
-import { GetStaticProps, GetStaticPaths, GetStaticPropsResult } from 'next'; // 确保 GetStaticPropsResult 也被导入
+import { GetStaticProps, GetStaticPaths, GetStaticPropsResult, GetStaticPropsContext } from 'next'; // 确保 GetStaticPropsResult 和 GetStaticPropsContext 都被导入
+import { ParsedUrlQuery } from 'querystring'; // 导入 ParsedUrlQuery 类型
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import NewsCard from '@/components/features/NewsCard';
@@ -31,6 +32,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
     if (!res.ok) {
       const errorText = await res.text();
       console.error(`BUILD_LOG_CATEGORIES_ID: getStaticPaths - API response not OK: ${res.status} - ${errorText}`);
+      // 抛出错误以确保 catch 块被激活，但不会导致构建失败，因为 fallback
       throw new Error(`获取分类失败: ${res.status}`);
     }
     
@@ -49,6 +51,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
     };
   } catch (error) {
     console.error('BUILD_LOG_CATEGORIES_ID: getStaticPaths - Error:', error);
+    // 在错误情况下也必须返回一个有效的 GetStaticPathsResult
     return {
       paths: [],
       fallback: true,
@@ -57,8 +60,9 @@ export const getStaticPaths: GetStaticPaths = async () => {
 };
 
 // 为每个路径获取数据
-// 确保 CategoryPageProps 接口在定义 getStaticProps 之前就已经存在
-export const getStaticProps: GetStaticProps<CategoryPageProps> = async ({ params }) => {
+// 明确指定返回类型 GetStaticPropsResult，以帮助 TypeScript 验证
+export const getStaticProps: GetStaticProps<CategoryPageProps> = async (context: GetStaticPropsContext<ParsedUrlQuery>) => {
+  const { params } = context; // 从 context 中解构 params
   try {
     const { id: slug } = params as { id: string };
     
@@ -71,7 +75,11 @@ export const getStaticProps: GetStaticProps<CategoryPageProps> = async ({ params
     if (!categoryRes.ok) {
       const errorText = await categoryRes.text();
       console.error(`BUILD_LOG_CATEGORIES_ID: getStaticProps - Category API response not OK: ${categoryRes.status} - ${errorText}`);
-      throw new Error(`获取分类详情失败: ${categoryRes.status}`);
+      // 返回 notFound 结果，而不是抛出错误，这更符合 SSG 的错误处理模式
+      return {
+        notFound: true,
+        revalidate: 60, // 1分钟后重试，确保不会永久缓存404
+      };
     }
     
     const categoryData = await categoryRes.json();
@@ -86,7 +94,11 @@ export const getStaticProps: GetStaticProps<CategoryPageProps> = async ({ params
     if (!newsRes.ok) {
       const errorText = await newsRes.text();
       console.error(`BUILD_LOG_CATEGORIES_ID: getStaticProps - News API response not OK: ${newsRes.status} - ${errorText}`);
-      throw new Error(`获取分类新闻失败: ${newsRes.status}`);
+      // 返回 notFound 结果
+      return {
+        notFound: true,
+        revalidate: 60, // 1分钟后重试，确保不会永久缓存404
+      };
     }
     
     const newsData = await newsRes.json();
@@ -105,14 +117,10 @@ export const getStaticProps: GetStaticProps<CategoryPageProps> = async ({ params
   } catch (error) {
     console.error('BUILD_LOG_CATEGORIES_ID: getStaticProps - Error:', error);
     
+    // 捕获到任何错误时，返回 notFound，并设置 revalidate
     return {
-      props: {
-        category: createDefaultCategory(params?.id as string || 'unknown'),
-        news: [],
-        pagination: { total: 0, page: 1, pageSize: 10 },
-        lastUpdated: new Date().toISOString(),
-      },
-      revalidate: 60,
+      notFound: true, // 或者返回默认数据，取决于你的业务逻辑
+      revalidate: 60, // 1分钟后重试
     };
   }
 };
