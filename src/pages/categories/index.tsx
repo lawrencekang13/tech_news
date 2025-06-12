@@ -1,71 +1,27 @@
 import React from 'react';
-import { GetStaticPaths, GetStaticProps } from 'next';
-import { useRouter } from 'next/router';
-import { ParsedUrlQuery } from 'querystring';
-import { getAllCategories, getCategoryBySlug } from '@/services/categoryService';
-import { Category, News } from '@/types';
-import NewsCard from '@/components/features/NewsCard';
+import { GetStaticProps } from 'next';
+import Link from 'next/link';
+import { getAllCategories } from '@/services/categoryService';
+import { Category } from '@/types';
 import Layout from '@/components/layout/Layout';
 import Head from 'next/head';
 
-export const getStaticPaths: GetStaticPaths = async () => {
-  const categories = await getAllCategories();
-  
-  return {
-    paths: categories.map((category) => ({
-      params: { slug: category.slug },
-    })),
-    fallback: 'blocking',
-  };
-};
-
-const createDefaultCategory = (slug: string = 'unknown'): Category => ({
-  id: '0',
-  name: '未知分类',
-  slug,
-  description: '未找到该分类',
-});
-
-interface IParams extends ParsedUrlQuery {
-  slug: string;
-}
-
-export const getStaticProps: GetStaticProps = async (context) => {
-  const { slug } = context.params as IParams;
-  
+export const getStaticProps: GetStaticProps = async () => {
   try {
-    // 获取分类详情
-    const category = await getCategoryBySlug(slug) || createDefaultCategory(slug);
-    
-    // 获取该分类下的新闻
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
-    const newsUrl = `${API_BASE_URL}/api/category/${slug}?page=1&limit=20`;
-    
-    let news: News[] = [];
-    try {
-      const newsRes = await fetch(newsUrl);
-      if (newsRes.ok) {
-        const newsData = await newsRes.json();
-        news = newsData.data?.news || [];
-      }
-    } catch (newsError) {
-      console.error('获取分类新闻失败:', newsError);
-    }
+    const categories = await getAllCategories();
     
     return {
       props: {
-        category,
-        news,
+        categories,
         lastUpdated: new Date().toISOString(),
       },
-      revalidate: 60, // 每分钟重新生成页面
+      revalidate: 300, // 每5分钟重新生成页面
     };
   } catch (error) {
-    console.error('获取分类数据失败:', error);
+    console.error('获取分类列表失败:', error);
     return {
       props: {
-        category: createDefaultCategory(slug),
-        news: [],
+        categories: [],
         lastUpdated: new Date().toISOString(),
       },
       revalidate: 60,
@@ -73,44 +29,44 @@ export const getStaticProps: GetStaticProps = async (context) => {
   }
 };
 
-interface CategoryPageProps {
-  category: Category;
-  news: News[];
+interface CategoriesPageProps {
+  categories: Category[];
   lastUpdated: string;
 }
 
-const CategoryPage: React.FC<CategoryPageProps> = ({ category, news, lastUpdated }) => {
-  const router = useRouter();
-  const { name, description } = category;
-
-  if (router.isFallback) {
-    return <div>加载中...</div>;
-  }
-
+const CategoriesPage: React.FC<CategoriesPageProps> = ({ categories, lastUpdated }) => {
   return (
     <div className="container mx-auto px-4 py-8">
       <Head>
-        <title>{name} - 新闻分类</title>
-        <meta name="description" content={description} />
+        <title>新闻分类 - 全球科技新闻</title>
+        <meta name="description" content="浏览所有新闻分类，找到您感兴趣的科技资讯" />
       </Head>
 
       <Layout>
-        <h1 className="text-3xl font-bold mb-4">{name}</h1>
-        <p className="text-gray-600 mb-8">{description}</p>
+        <h1 className="text-3xl font-bold mb-8">新闻分类</h1>
+        <p className="text-gray-600 mb-8">选择您感兴趣的分类，获取最新的科技资讯</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {news.map((item: News) => (
-            <NewsCard key={item.id} news={item} />
+          {categories.map((category: Category) => (
+            <Link key={category.id} href={`/category/${category.slug}`}>
+              <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 cursor-pointer border border-gray-200 hover:border-blue-300">
+                <h2 className="text-xl font-semibold mb-3 text-gray-800">{category.name}</h2>
+                <p className="text-gray-600 text-sm leading-relaxed">{category.description}</p>
+                <div className="mt-4 text-blue-600 text-sm font-medium">
+                  查看更多 →
+                </div>
+              </div>
+            </Link>
           ))}
         </div>
 
-        {news.length === 0 && (
+        {categories.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-xl text-secondary-500">暂无相关资讯</p>
+            <p className="text-xl text-gray-500">暂无分类数据</p>
           </div>
         )}
 
-        <div className="text-sm text-secondary-500 mt-8 text-right">
+        <div className="text-sm text-gray-500 mt-8 text-right">
           最后更新: {new Date(lastUpdated).toLocaleString()}
         </div>
       </Layout>
@@ -118,6 +74,6 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ category, news, lastUpdated
   );
 };
 
-export default CategoryPage;
+export default CategoriesPage;
  
 
