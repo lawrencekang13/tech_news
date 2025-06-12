@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import NewsCard from '@/components/features/NewsCard';
 import { News, Category } from '@/types';
+import { getAllCategoriesServer } from '@/services/serverCategoryService';
 
 interface CategoryPageProps {
   category: Category;
@@ -19,23 +20,12 @@ interface CategoryPageProps {
 // 获取所有可能的路径
 export const getStaticPaths: GetStaticPaths = async () => {
   try {
-    // 获取所有分类的slug
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
-    const apiUrl = `${API_BASE_URL}/api/categories?nav=true`;
+    console.log('BUILD_LOG_CATEGORIES_ID: getStaticPaths - Fetching categories directly from database');
     
-    console.log('BUILD_LOG_CATEGORIES_ID: getStaticPaths - Fetching categories from:', apiUrl); // <-- 添加日志
-    const res = await fetch(apiUrl);
+    // 直接调用服务器端服务，不使用 fetch
+    const categories = await getAllCategoriesServer(true);
     
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error(`BUILD_LOG_CATEGORIES_ID: getStaticPaths - API response not OK: ${res.status} - ${errorText}`); // <-- 详细错误日志
-      throw new Error(`获取分类失败: ${res.status}`);
-    }
-    
-    const data = await res.json();
-    console.log('BUILD_LOG_CATEGORIES_ID: getStaticPaths - API response data:', JSON.stringify(data, null, 2)); // <-- 打印完整数据
-    
-    const categories = data.data || [];
+    console.log('BUILD_LOG_CATEGORIES_ID: getStaticPaths - Categories data:', JSON.stringify(categories, null, 2));
     
     // 为每个分类生成路径
     const paths = categories.map((category: Category) => ({
@@ -49,7 +39,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
       fallback: true,
     };
   } catch (error) {
-    console.error('BUILD_LOG_CATEGORIES_ID: getStaticPaths - Error:', error); // <-- 捕获错误日志
+    console.error('BUILD_LOG_CATEGORIES_ID: getStaticPaths - Error:', error);
     
     // 出错时返回空路径
     return {
@@ -61,43 +51,38 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 // 为每个路径获取数据
 export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const slug = params?.id as string;
+  
   try {
-    const { id: slug } = params as { id: string };
+    console.log('BUILD_LOG_CATEGORIES_ID: getStaticProps - Fetching category and news directly from database');
     
-    // 获取分类详情
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
-    const categoryUrl = `${API_BASE_URL}/api/categories/${slug}`;
+    // 直接调用服务器端服务获取分类信息
+    const { getCategoryBySlugServer } = await import('@/services/serverCategoryService');
+    const { getNewsByCategoryServer } = await import('@/services/serverNewsService');
     
-    console.log('BUILD_LOG_CATEGORIES_ID: getStaticProps - Fetching category detail from:', categoryUrl); // <-- 添加日志
-    const categoryRes = await fetch(categoryUrl);
-    
-    if (!categoryRes.ok) {
-      const errorText = await categoryRes.text();
-      console.error(`BUILD_LOG_CATEGORIES_ID: getStaticProps - Category API response not OK: ${categoryRes.status} - ${errorText}`); // <-- 详细错误日志
-      throw new Error(`获取分类详情失败: ${categoryRes.status}`);
+    let category;
+    try {
+      category = await getCategoryBySlugServer(slug);
+      console.log('BUILD_LOG_CATEGORIES_ID: getStaticProps - Category data:', JSON.stringify(category, null, 2));
+    } catch (error) {
+      console.log('BUILD_LOG_CATEGORIES_ID: getStaticProps - Category not found, using default');
+      // 如果分类不存在，创建一个默认分类
+      category = createDefaultCategory(slug);
     }
-    
-    const categoryData = await categoryRes.json();
-    console.log('BUILD_LOG_CATEGORIES_ID: getStaticProps - Category API response data:', JSON.stringify(categoryData, null, 2)); // <-- 打印完整数据
-    const category = categoryData.data || createDefaultCategory(slug);
     
     // 获取该分类下的新闻
-    const newsUrl = `${API_BASE_URL}/api/category/${slug}?page=1`;
-    
-    console.log('BUILD_LOG_CATEGORIES_ID: getStaticProps - Fetching category news from:', newsUrl); // <-- 添加日志
-    const newsRes = await fetch(newsUrl);
-    
-    if (!newsRes.ok) {
-      const errorText = await newsRes.text();
-      console.error(`BUILD_LOG_CATEGORIES_ID: getStaticProps - News API response not OK: ${newsRes.status} - ${errorText}`); // <-- 详细错误日志
-      throw new Error(`获取分类新闻失败: ${newsRes.status}`);
+     let news: News[] = [];
+     let pagination = { total: 0, page: 1, pageSize: 10 };
+    try {
+      const result = await getNewsByCategoryServer(slug, 1, 10);
+      news = result.news || [];
+      pagination = result.pagination || pagination;
+      console.log('BUILD_LOG_CATEGORIES_ID: getStaticProps - News data:', JSON.stringify({ news, pagination }, null, 2));
+    } catch (error) {
+      console.error('BUILD_LOG_CATEGORIES_ID: getStaticProps - Error fetching news:', error);
+      news = [];
     }
     
-    const newsData = await newsRes.json();
-    console.log('BUILD_LOG_CATEGORIES_ID: getStaticProps - News API response data:', JSON.stringify(newsData, null, 2)); // <-- 打印完整数据
-    const { news = [], pagination = { total: 0, page: 1, pageSize: 10 } } = newsData.data || {};
-    
-    // 返回props给页面组件
     return {
       props: {
         category,
@@ -105,23 +90,22 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
         pagination,
         lastUpdated: new Date().toISOString(),
       },
-      // 设置页面重新生成的时间间隔（秒）
-      // 每15分钟重新获取数据
-      revalidate: 900,
+      revalidate: 900, // 15分钟后重新生成页面
     };
   } catch (error) {
-    console.error('BUILD_LOG_CATEGORIES_ID: getStaticProps - Error:', error); // <-- 捕获错误日志
+    console.error('BUILD_LOG_CATEGORIES_ID: getStaticProps - Error:', error);
     
-    // 如果获取数据失败，返回默认数据
+    // 出错时返回默认分类和空新闻列表
+    const defaultCategory = createDefaultCategory(slug);
+    
     return {
       props: {
-        category: createDefaultCategory(params?.id as string || 'unknown'),
+        category: defaultCategory,
         news: [],
         pagination: { total: 0, page: 1, pageSize: 10 },
         lastUpdated: new Date().toISOString(),
       },
-      // 即使返回默认数据，也需要设置revalidate
-      revalidate: 60, // 1分钟后重试
+      revalidate: 60,
     };
   }
 };

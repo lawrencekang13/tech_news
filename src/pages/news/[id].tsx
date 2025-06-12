@@ -43,37 +43,23 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3
 // 用于静态生成动态路由页面
 export const getStaticPaths: GetStaticPaths = async () => {
   try {
-    // 构建 API URL，确保是完整的 URL
-    const apiUrl = `${API_BASE_URL}/api/news/trending?limit=10`;
-    console.log('BUILD_LOG_NEWS_ID: getStaticPaths - Fetching trending news from:', apiUrl); // <-- 添加日志
-
-    const res = await fetch(apiUrl);
+    // 直接调用服务器端服务获取热门新闻
+    const { getTrendingNewsServer } = await import('@/services/serverNewsService');
+    const news = await getTrendingNewsServer(50);
     
-    if (!res.ok) {
-      // 捕获非2xx响应，抛出错误
-      throw new Error(`获取热门新闻失败: ${res.status} - ${res.statusText}`);
-    }
-    
-    const data = await res.json();
-    console.log('BUILD_LOG_NEWS_ID: getStaticPaths - API response data:', JSON.stringify(data, null, 2)); // <-- 打印完整数据
-    const trendingNews = data.data?.news || [];
-    
-    // 为每个热门新闻生成路径
-    const paths = trendingNews.map((news: News) => ({
-      params: { id: news.id.toString() },
+    // 为每个新闻生成路径
+    const paths = news.map((item: News) => ({
+      params: { id: item.id },
     }));
     
     return {
       paths,
-      // fallback: 'blocking' 表示如果请求的路径不在预渲染的路径中，
-      // Next.js 将在服务器端渲染页面并缓存它用于未来的请求。
-      // 这对于新闻详情页很常见，因为新闻数量可能非常大。
-      fallback: 'blocking',
+      fallback: 'blocking', // 对于未预渲染的页面，在服务器端渲染
     };
   } catch (error) {
-    console.error('BUILD_LOG_NEWS_ID: getStaticPaths - Error:', error); // <-- 捕获错误日志
-    // 出错时返回空路径，并使用 fallback: 'blocking'
-    // 这样未预渲染的路径将在请求时 SSR
+    console.error('getStaticPaths error:', error);
+    
+    // 出错时返回空路径
     return {
       paths: [],
       fallback: 'blocking',
@@ -83,64 +69,47 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 // 为每个路径获取数据 (getStaticProps)
 export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const id = params?.id as string;
+  
   try {
-    const { id } = params as { id: string };
+    // 直接调用服务器端服务获取新闻详情
+    const { getNewsByIdServer, getRelatedNewsServer } = await import('@/services/serverNewsService');
     
-    // 获取新闻详情
-    const newsUrl = `${API_BASE_URL}/api/news/${id}`;
-    console.log('BUILD_LOG_NEWS_ID: getStaticProps - Fetching news detail from:', newsUrl); // <-- 添加日志
-    const newsRes = await fetch(newsUrl);
+    console.log('BUILD_LOG_NEWS_ID: getStaticProps - Fetching news detail directly from database');
     
-    if (!newsRes.ok) {
-      const errorText = await newsRes.text();
-      console.error(`BUILD_LOG_NEWS_ID: getStaticProps - News detail API response not OK: ${newsRes.status} - ${errorText}`); // <-- 详细错误日志
-      throw new Error(`获取新闻详情失败: ${newsRes.status} - ${newsRes.statusText}`);
-    }
-    
-    const newsData = await newsRes.json();
-    console.log('BUILD_LOG_NEWS_ID: getStaticProps - News detail API response data:', JSON.stringify(newsData, null, 2)); // <-- 打印完整数据
-    const news: News = newsData.data; // 确保newsData.data是News类型
+    const news = await getNewsByIdServer(id);
     
     if (!news) {
-      // 如果新闻不存在，返回 notFound
       return {
         notFound: true,
-        revalidate: 60, // 1分钟后重试，确保不会永久缓存404
       };
     }
     
-    // 获取相关新闻
-    const relatedNewsUrl = `${API_BASE_URL}/api/news?category=${news.category}&limit=3`;
-    console.log('BUILD_LOG_NEWS_ID: getStaticProps - Fetching related news from:', relatedNewsUrl); // <-- 添加日志
-    const relatedNewsRes = await fetch(relatedNewsUrl);
-    let relatedNews: News[] = [];
+    console.log('BUILD_LOG_NEWS_ID: getStaticProps - News data:', JSON.stringify(news, null, 2));
     
-    if (relatedNewsRes.ok) {
-      const relatedNewsData = await relatedNewsRes.json();
-      console.log('BUILD_LOG_NEWS_ID: getStaticProps - Related news API response data:', JSON.stringify(relatedNewsData, null, 2)); // <-- 打印完整数据
-      relatedNews = (relatedNewsData.data?.news || []).filter(
-        (item: News) => item.id !== news.id
-      ).slice(0, 3);
+    // 获取相关新闻
+     let relatedNews: News[] = [];
+    try {
+      relatedNews = await getRelatedNewsServer(id, news.category, 5);
+      console.log('BUILD_LOG_NEWS_ID: getStaticProps - Related news data:', JSON.stringify(relatedNews, null, 2));
+    } catch (relatedError) {
+      console.error('BUILD_LOG_NEWS_ID: getStaticProps - Error fetching related news:', relatedError);
     }
     
-    // 返回props给页面组件
     return {
       props: {
         news,
         relatedNews,
         lastUpdated: new Date().toISOString(),
       },
-      // 设置页面重新生成的时间间隔（秒）
-      // 每小时重新获取数据，实现 ISR
-      revalidate: 3600, 
+      revalidate: 300, // 5分钟后重新生成页面
     };
   } catch (error) {
-    console.error('BUILD_LOG_NEWS_ID: getStaticProps - Error:', error); // <-- 捕获错误日志
+    console.error('BUILD_LOG_NEWS_ID: getStaticProps - Error:', error);
     
-    // 如果获取数据失败，返回404，并在 revalidate 后重试
+    // 出错时返回 notFound
     return {
       notFound: true,
-      revalidate: 60, 
     };
   }
 };

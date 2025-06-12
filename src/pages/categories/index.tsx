@@ -1,30 +1,29 @@
 import React from 'react';
 import { GetStaticProps } from 'next';
 import Link from 'next/link';
-import { getAllCategories } from '@/services/categoryService';
+import { getAllCategoriesServer } from '@/services/serverCategoryService';
 import { Category } from '@/types';
 import Layout from '@/components/layout/Layout';
 import Head from 'next/head';
 
 export const getStaticProps: GetStaticProps = async () => {
   try {
-    const categories = await getAllCategories();
+    const categories = await getAllCategoriesServer();
     
     return {
       props: {
         categories,
-        lastUpdated: new Date().toISOString(),
       },
-      revalidate: 300, // 每5分钟重新生成页面
+      revalidate: 3600, // 1小时后重新生成
     };
   } catch (error) {
-    console.error('获取分类列表失败:', error);
+    console.error('Error fetching categories:', error);
+    
     return {
       props: {
         categories: [],
-        lastUpdated: new Date().toISOString(),
       },
-      revalidate: 60,
+      revalidate: 60, // 出错时1分钟后重试
     };
   }
 };
