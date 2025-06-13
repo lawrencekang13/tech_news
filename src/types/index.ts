@@ -11,6 +11,10 @@ export type News = {
   imageUrl?: string;
   content?: string;
   author?: string;
+  viewCount?: number;
+  isRealtime?: boolean;
+  realtimeSource?: string;
+  lastUpdated?: string;
   structuredInfo?: StructuredInfoData;
   visualizationData?: VisualizationData;
   relatedNews?: RelatedNews[];
@@ -32,6 +36,7 @@ export type Category = {
   aliases?: string[];
   showInNav?: boolean;
   icon?: string;
+  color?: string;
   parentId?: string;
   metadata?: Record<string, any>;
   priority?: number;

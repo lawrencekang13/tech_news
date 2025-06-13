@@ -93,14 +93,17 @@ export async function getAllCategoriesServer(nav: boolean = false): Promise<Cate
     }
 
     // 转换为前端类型
-    return categories.map((cat: any) => ({
-      id: cat._id.toString(),
-      name: cat.name,
-      slug: cat.slug,
-      icon: cat.icon || '📰',
-      color: cat.color || '#6B7280',
-      description: cat.description || ''
-    }));
+    return categories.map((cat: any) => {
+      const catData = cat as any;
+      return {
+        id: catData._id.toString(),
+        name: catData.name || '',
+        slug: catData.slug || '',
+        icon: catData.icon || '📰',
+        color: catData.color || '#6B7280',
+        description: catData.description || ''
+      };
+    });
   } catch (error) {
     console.error('获取分类列表失败:', error);
     
@@ -131,13 +134,14 @@ export async function getCategoryBySlugServer(slug: string): Promise<CategoryTyp
     }
 
     // 转换为前端类型
+    const categoryData = category as any;
     return {
-      id: category._id.toString(),
-      name: category.name,
-      slug: category.slug,
-      icon: category.icon || '📰',
-      color: category.color || '#6B7280',
-      description: category.description || ''
+      id: categoryData._id.toString(),
+      name: categoryData.name || '',
+      slug: categoryData.slug || '',
+      icon: categoryData.icon || '📰',
+      color: categoryData.color || '#6B7280',
+      description: categoryData.description || ''
     };
   } catch (error) {
     console.error(`获取分类 ${slug} 详情失败:`, error);

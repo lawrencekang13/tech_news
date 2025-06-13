@@ -36,23 +36,26 @@ export async function getTrendingNewsServer(limit: number = 10): Promise<NewsTyp
     }
 
     // 转换为前端类型
-    return trendingNews.map((news: any) => ({
-      id: news._id.toString(),
-      title: news.title,
-      summary: news.summary,
-      content: news.content || '',
-      publishDate: news.publishedAt || news.publishDate,
-      source: news.source || 'Unknown',
-      sourceUrl: news.sourceUrl || '',
-      author: news.author || 'Unknown',
-      imageUrl: news.thumbnail || news.imageUrl || '',
-      category: news.category,
-      tags: news.tags || [],
-      viewCount: news.views || 0,
-      isRealtime: news.isRealtime || false,
-      realtimeSource: news.realtimeSource || '',
-      lastUpdated: news.updatedAt?.toString() || (news as any).lastUpdated || new Date().toISOString()
-    }));
+    return trendingNews.map((news: any) => {
+      const newsData = news as any;
+      return {
+        id: newsData._id.toString(),
+        title: newsData.title || '',
+        summary: newsData.summary || '',
+        content: newsData.content || '',
+        publishDate: newsData.publishedAt || newsData.publishDate || new Date().toISOString(),
+        source: newsData.source || 'Unknown',
+        sourceUrl: newsData.sourceUrl || '',
+        author: newsData.author || 'Unknown',
+        imageUrl: newsData.thumbnail || newsData.imageUrl || '',
+        category: newsData.category || '',
+        tags: newsData.tags || [],
+        viewCount: newsData.views || 0,
+        isRealtime: newsData.isRealtime || false,
+        realtimeSource: newsData.realtimeSource || '',
+        lastUpdated: newsData.updatedAt?.toString() || newsData.lastUpdated || new Date().toISOString()
+      };
+    });
   } catch (error) {
     console.error('获取热门新闻失败:', error);
     return getMockTrendingNews(limit);
@@ -76,22 +79,23 @@ export async function getNewsByIdServer(id: string): Promise<NewsType | null> {
     }
 
     // 转换为前端类型
+    const newsData = news as any;
     return {
-      id: news._id.toString(),
-      title: news.title,
-      summary: news.summary,
-      content: news.content || '',
-      publishDate: news.publishedAt || news.publishDate,
-      source: news.source || 'Unknown',
-      sourceUrl: news.sourceUrl || '',
-      author: news.author || 'Unknown',
-      imageUrl: news.thumbnail || news.imageUrl || '',
-      category: news.category,
-      tags: news.tags || [],
-      viewCount: news.views || 0,
-      isRealtime: news.isRealtime || false,
-      realtimeSource: news.realtimeSource || '',
-      lastUpdated: news.updatedAt?.toString() || (news as any).lastUpdated || new Date().toISOString()
+      id: newsData._id.toString(),
+      title: newsData.title || '',
+      summary: newsData.summary || '',
+      content: newsData.content || '',
+      publishDate: newsData.publishedAt || newsData.publishDate || new Date().toISOString(),
+      source: newsData.source || 'Unknown',
+      sourceUrl: newsData.sourceUrl || '',
+      author: newsData.author || 'Unknown',
+      imageUrl: newsData.thumbnail || newsData.imageUrl || '',
+      category: newsData.category || '',
+      tags: newsData.tags || [],
+      viewCount: newsData.views || 0,
+      isRealtime: newsData.isRealtime || false,
+      realtimeSource: newsData.realtimeSource || '',
+      lastUpdated: newsData.updatedAt?.toString() || newsData.lastUpdated || new Date().toISOString()
     };
   } catch (error) {
     console.error(`获取新闻 ${id} 详情失败:`, error);
@@ -125,23 +129,26 @@ export async function getNewsByCategoryServer(
       News.countDocuments({ category: categorySlug })
     ]);
     
-    const formattedNews = news.map((item: any) => ({
-      id: item._id.toString(),
-      title: item.title,
-      summary: item.summary,
-      content: item.content || '',
-      publishDate: item.publishedAt || item.publishDate,
-      source: item.source || 'Unknown',
-      sourceUrl: item.sourceUrl || '',
-      author: item.author || 'Unknown',
-      imageUrl: item.thumbnail || item.imageUrl || '',
-      category: item.category,
-      tags: item.tags || [],
-      viewCount: item.views || 0,
-      isRealtime: item.isRealtime || false,
-      realtimeSource: item.realtimeSource || '',
-      lastUpdated: item.updatedAt || item.lastUpdated || new Date().toISOString()
-    }));
+    const formattedNews = news.map((item: any) => {
+      const itemData = item as any;
+      return {
+        id: itemData._id.toString(),
+        title: itemData.title || '',
+        summary: itemData.summary || '',
+        content: itemData.content || '',
+        publishDate: itemData.publishedAt || itemData.publishDate || new Date().toISOString(),
+        source: itemData.source || 'Unknown',
+        sourceUrl: itemData.sourceUrl || '',
+        author: itemData.author || 'Unknown',
+        imageUrl: itemData.thumbnail || itemData.imageUrl || '',
+        category: itemData.category || '',
+        tags: itemData.tags || [],
+        viewCount: itemData.views || 0,
+        isRealtime: itemData.isRealtime || false,
+        realtimeSource: itemData.realtimeSource || '',
+        lastUpdated: itemData.updatedAt?.toString() || itemData.lastUpdated || new Date().toISOString()
+      };
+    });
     
     return {
       news: formattedNews,
@@ -210,23 +217,26 @@ export async function getRelatedNewsServer(
       .lean();
 
     // 转换为前端类型
-    return relatedNews.map((news: any) => ({
-      id: news._id.toString(),
-      title: news.title,
-      summary: news.summary,
-      content: news.content || '',
-      publishDate: news.publishedAt || news.publishDate,
-      source: news.source || 'Unknown',
-      sourceUrl: news.sourceUrl || '',
-      author: news.author || 'Unknown',
-      imageUrl: news.thumbnail || news.imageUrl || '',
-      category: news.category,
-      tags: news.tags || [],
-      viewCount: news.views || 0,
-      isRealtime: news.isRealtime || false,
-      realtimeSource: news.realtimeSource || '',
-      lastUpdated: news.updatedAt || news.lastUpdated || new Date().toISOString()
-    }));
+    return relatedNews.map((news: any) => {
+      const newsData = news as any;
+      return {
+        id: newsData._id.toString(),
+        title: newsData.title || '',
+        summary: newsData.summary || '',
+        content: newsData.content || '',
+        publishDate: newsData.publishedAt || newsData.publishDate || new Date().toISOString(),
+        source: newsData.source || 'Unknown',
+        sourceUrl: newsData.sourceUrl || '',
+        author: newsData.author || 'Unknown',
+        imageUrl: newsData.thumbnail || newsData.imageUrl || '',
+        category: newsData.category || '',
+        tags: newsData.tags || [],
+        viewCount: newsData.views || 0,
+        isRealtime: newsData.isRealtime || false,
+        realtimeSource: newsData.realtimeSource || '',
+        lastUpdated: newsData.updatedAt?.toString() || newsData.lastUpdated || new Date().toISOString()
+      };
+    });
   } catch (error) {
     console.error(`获取相关新闻失败:`, error);
     return [];
