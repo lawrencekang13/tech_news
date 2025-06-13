@@ -1,6 +1,7 @@
 import connectDB from '../../lib/db';
 import News from '../../models/News';
 import { News as NewsType } from '@/types';
+import mongoose from 'mongoose';
 
 /**
  * 服务器端新闻服务
@@ -71,11 +72,17 @@ export async function getNewsByIdServer(id: string): Promise<NewsType | null> {
   try {
     await connectDB();
 
+    // 验证是否为有效的ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      console.log(`Invalid ObjectId format: ${id}`);
+      return null;
+    }
+
     const news = await News.findById(id).lean();
     
     if (!news) {
-      // 如果数据库中没有，返回模拟数据
-      return getMockNewsById(id);
+      console.log(`News not found for id: ${id}`);
+      return null;
     }
 
     // 转换为前端类型
@@ -99,7 +106,7 @@ export async function getNewsByIdServer(id: string): Promise<NewsType | null> {
     };
   } catch (error) {
     console.error(`获取新闻 ${id} 详情失败:`, error);
-    return getMockNewsById(id);
+    return null;
   }
 }
 
@@ -199,12 +206,47 @@ export async function getNewsByCategoryServer(
  * @returns Promise<NewsType[]>
  */
 export async function getRelatedNewsServer(
+  excludeId: string,
   category: string, 
-  excludeId: string, 
   limit: number = 3
 ): Promise<NewsType[]> {
   try {
     await connectDB();
+
+    // 验证excludeId是否为有效的ObjectId
+    if (!mongoose.Types.ObjectId.isValid(excludeId)) {
+      console.log(`Invalid ObjectId format for excludeId: ${excludeId}`);
+      // 如果excludeId无效，就不排除任何文档
+      const relatedNews = await News.find({ 
+        category, 
+        status: 'published'
+      })
+        .select('title summary author publishedAt category tags views likes comments thumbnail url')
+        .sort({ publishedAt: -1 })
+        .limit(limit)
+        .lean();
+      
+      return relatedNews.map((news: any) => {
+        const newsData = news as any;
+        return {
+          id: newsData._id.toString(),
+          title: newsData.title || '',
+          summary: newsData.summary || '',
+          content: newsData.content || '',
+          publishDate: newsData.publishedAt || newsData.publishDate || new Date().toISOString(),
+          source: newsData.source || 'Unknown',
+          sourceUrl: newsData.sourceUrl || '',
+          author: newsData.author || 'Unknown',
+          imageUrl: newsData.thumbnail || newsData.imageUrl || '',
+          category: newsData.category || '',
+          tags: newsData.tags || [],
+          viewCount: newsData.views || 0,
+          isRealtime: newsData.isRealtime || false,
+          realtimeSource: newsData.realtimeSource || '',
+          lastUpdated: newsData.updatedAt?.toString() || newsData.lastUpdated || new Date().toISOString()
+        };
+      });
+    }
 
     const relatedNews = await News.find({ 
       category, 

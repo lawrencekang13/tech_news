@@ -1,6 +1,7 @@
 import connectDB from '../../lib/db';
 import Category from '../../models/Category';
 import { Category as CategoryType } from '@/types';
+import mongoose from 'mongoose';
 
 /**
  * 服务器端分类服务

@@ -64,10 +64,18 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     try {
       category = await getCategoryBySlugServer(slug);
       console.log('BUILD_LOG_CATEGORIES_ID: getStaticProps - Category data:', JSON.stringify(category, null, 2));
+      
+      if (!category) {
+        console.log('BUILD_LOG_CATEGORIES_ID: getStaticProps - Category not found, returning notFound');
+        return {
+          notFound: true,
+        };
+      }
     } catch (error) {
-      console.log('BUILD_LOG_CATEGORIES_ID: getStaticProps - Category not found, using default');
-      // 如果分类不存在，创建一个默认分类
-      category = createDefaultCategory(slug);
+      console.error('BUILD_LOG_CATEGORIES_ID: getStaticProps - Error fetching category:', error);
+      return {
+        notFound: true,
+      };
     }
     
     // 获取该分类下的新闻
@@ -95,33 +103,14 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   } catch (error) {
     console.error('BUILD_LOG_CATEGORIES_ID: getStaticProps - Error:', error);
     
-    // 出错时返回默认分类和空新闻列表
-    const defaultCategory = createDefaultCategory(slug);
-    
+    // 出错时返回 notFound
     return {
-      props: {
-        category: defaultCategory,
-        news: [],
-        pagination: { total: 0, page: 1, pageSize: 10 },
-        lastUpdated: new Date().toISOString(),
-      },
-      revalidate: 60,
+      notFound: true,
     };
   }
 };
 
-// 创建默认分类
-const createDefaultCategory = (slug: string): Category => {
-  return {
-    id: slug,
-    slug: slug,
-    name: slug,
-    description: `关于${slug}的最新资讯`,
-    showInNav: false,
-    aliases: [],
-    metadata: {}
-  };
-};
+
 
 const CategoryPage: React.FC<CategoryPageProps> = ({ 
   category, 
