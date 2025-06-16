@@ -48,7 +48,7 @@ const NewsSchema = new mongoose.Schema({
   tags: { type: [String], required: true },
   publishDate: { type: Date, required: true, default: Date.now },
   source: { type: String, required: true },
-  sourceUrl: { type: String, required: true },
+  sourceUrl: { type: String, required: false, default: '' },
   imageUrl: String,
   author: String,
   trending: { type: Boolean, default: false },

@@ -12,13 +12,12 @@ const nextConfig = {
     defaultLocale: 'zh',
   },
 
-  // === 添加以下 env 配置 ===
-  // next.config.js 错误的 env 语法
   env: {
-    // 正确的 JavaScript 语法：使用三元运算符和反引号 `` ` `` 包裹模板字符串
     NEXT_PUBLIC_API_BASE_URL: process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000',
-  },
-  // === 添加 env 配置结束 ===
+    MONGO_URI: process.env.MONGO_URI,
+    REDIS_URL: process.env.REDIS_URL,
+    REDIS_TOKEN: process.env.REDIS_TOKEN,
+  }
 };
 
 module.exports = nextConfig;

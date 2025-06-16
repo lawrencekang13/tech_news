@@ -257,15 +257,24 @@ const NewsDetailPage: React.FC<NewsDetailPageProps> = ({
           >
             返回上一页
           </button>
-          
-          {/* 这里保留 '查看动态版本' 链接，尽管SSG+fallback 'blocking' 意味着所有页面最终都是静态生成的 */}
-          <Link 
-            href={`/news/${news.id}`} 
-            className="text-primary-600 hover:underline"
-          >
-            查看动态版本
-          </Link>
         </div>
+
+        {/* 阅读原文链接 */}
+        {news.sourceUrl && (
+          <div className="mt-8 pt-6 border-t border-secondary-200">
+            <a 
+              href={news.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center text-primary-600 hover:text-primary-700 font-medium transition-colors"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              阅读原文
+            </a>
+          </div>
+        )}
       </div>
     </>
   );
