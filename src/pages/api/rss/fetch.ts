@@ -243,10 +243,9 @@ async function processNewsItems(newsItems: NewsItem[]) {
   
   for (const item of newsItems) {
     try {
-      // 检查是否已存在相同标题的新闻
+      // 检查是否已存在相同链接的新闻（使用链接作为唯一标识更准确）
       const existingNews = await News.findOne({ 
-        title: item.title,
-        source: item.source 
+        link: item.sourceUrl 
       });
       
       if (existingNews) {

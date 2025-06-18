@@ -14,7 +14,13 @@ import Link from 'next/link';
 // import { toast } from 'react-hot-toast'; 
 
 // 导入你的类型定义
-import { News, RelatedNews, StructuredInfoData, VisualizationData } from '@/types'; 
+import { News, RelatedNews, StructuredInfoData, VisualizationData } from '@/types';
+import NewsModel from '../../../models/News';
+import connectDB from '@/lib/db';
+import { getNewsByIdServer, getRelatedNewsServer } from '@/services/serverNewsService';
+
+// 临时测试数据
+ 
 
 // 如果您的页面组件中直接调用了API函数，请确保导入
 // import { fetchNewsDetail, fetchCategories } from '@/api/news';
@@ -43,26 +49,21 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3
 // 用于静态生成动态路由页面
 export const getStaticPaths: GetStaticPaths = async () => {
   try {
-    // 直接调用服务器端服务获取热门新闻
-    const { getTrendingNewsServer } = await import('@/services/serverNewsService');
-    const news = await getTrendingNewsServer(50);
-    
-    // 为每个新闻生成路径
-    const paths = news.map((item: News) => ({
-      params: { id: item.id },
+    await connectDB();
+    const newsData = await NewsModel.find({}, '_id').lean();
+    const paths = newsData.map((news) => ({
+      params: { id: (news._id as { toString(): string }).toString() }
     }));
     
     return {
       paths,
-      fallback: 'blocking', // 对于未预渲染的页面，在服务器端渲染
+      fallback: 'blocking' // 或者 true，允许动态生成新页面
     };
   } catch (error) {
-    console.error('getStaticPaths error:', error);
-    
-    // 出错时返回空路径
+    console.error('获取新闻路径失败:', error);
     return {
       paths: [],
-      fallback: 'blocking',
+      fallback: 'blocking'
     };
   }
 };
@@ -72,42 +73,26 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const id = params?.id as string;
   
   try {
-    // 直接调用服务器端服务获取新闻详情
-    const { getNewsByIdServer, getRelatedNewsServer } = await import('@/services/serverNewsService');
-    
-    console.log('BUILD_LOG_NEWS_ID: getStaticProps - Fetching news detail directly from database');
-    
-    const news = await getNewsByIdServer(id);
-    
+    await connectDB();
+    const news = await getNewsByIdServer(id as string);
+    const relatedNews = await getRelatedNewsServer(id as string, news.category || '', 5);
+
     if (!news) {
       return {
         notFound: true,
       };
     }
-    
-    console.log('BUILD_LOG_NEWS_ID: getStaticProps - News data:', JSON.stringify(news, null, 2));
-    
-    // 获取相关新闻
-     let relatedNews: News[] = [];
-    try {
-      relatedNews = await getRelatedNewsServer(id, news.category, 5);
-      console.log('BUILD_LOG_NEWS_ID: getStaticProps - Related news data:', JSON.stringify(relatedNews, null, 2));
-    } catch (relatedError) {
-      console.error('BUILD_LOG_NEWS_ID: getStaticProps - Error fetching related news:', relatedError);
-    }
-    
+
     return {
       props: {
-        news,
-        relatedNews,
+        news: JSON.parse(JSON.stringify(news)),
+        relatedNews: JSON.parse(JSON.stringify(relatedNews)),
         lastUpdated: new Date().toISOString(),
       },
       revalidate: 300, // 5分钟后重新生成页面
     };
   } catch (error) {
-    console.error('BUILD_LOG_NEWS_ID: getStaticProps - Error:', error);
-    
-    // 出错时返回 notFound
+    console.error('获取新闻详情失败:', error);
     return {
       notFound: true,
     };

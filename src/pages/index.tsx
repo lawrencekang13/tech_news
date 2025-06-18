@@ -1,33 +1,18 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import NewsCard from '@/components/features/NewsCard';
-import CategoryFilter from '@/components/features/CategoryFilter';
+import NewsCard from '../components/features/NewsCard';
+import CategoryFilter from '../components/features/CategoryFilter';
 import { useQuery } from 'react-query';
-import { News, Category } from '@/types';
-import * as categoryService from '@/services/categoryService';
+import { News, Category } from '../types';
+import * as categoryService from '../services/categoryService';
 import { fetchSavedNews } from '@/api/user';
 
-// 获取资讯数据的API
-const fetchNews = async (categorySlug: string = '') => {
-  try {
-    const url = categorySlug 
-      ? `/api/news?category=${encodeURIComponent(categorySlug)}`
-      : '/api/news';
-    
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    
-    const result = await res.json();
-    // 后端返回的数据结构是 {success: true, data: [...], pagination: {...}}
-    // 我们需要提取 data 数组
-    return result.data || [];
-  } catch (error) {
-    console.error('获取新闻数据失败:', error);
-    // 返回空数组，让UI显示加载失败状态
-    return [];
+const fetchNews = async (categorySlug?: string): Promise<News[]> => {
+  const response = await fetch(`/api/news${categorySlug && categorySlug !== 'all' ? `?category=${categorySlug}` : ''}`);
+  if (!response.ok) {
+    throw new Error('获取资讯失败');
   }
+  return response.json();
 };
 
 const Home = () => {
