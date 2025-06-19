@@ -12,7 +12,8 @@ const fetchNews = async (categorySlug?: string): Promise<News[]> => {
   if (!response.ok) {
     throw new Error('获取资讯失败');
   }
-  return response.json();
+  const result = await response.json();
+  return result.data || [];
 };
 
 const Home = () => {

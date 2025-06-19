@@ -70,27 +70,65 @@ async function fetchFromRSS(feedUrl: string) {
       // 确定分类
       const category = determineCategoryFromFeed(feed.title, item.categories);
       
-      // 提取标签
-      const tags = item.categories || extractTags(item.title, item.contentSnippet || '');
-      
-      return {
-        title: item.title,
-        summary: item.contentSnippet || '',
-        content: item.contentEncoded || item.content || item.contentSnippet || '',
-        publishDate: new Date(item.pubDate || item.isoDate || new Date().toISOString()),
-        source: feed.title,
-        author: item.creator || item.author || feed.title,
-        imageUrl: extractImageFromContent(item.contentEncoded || item.content || '') || '',
-        sourceUrl: item.link,
-        category,
-        tags: Array.isArray(tags) ? tags : [tags].filter(Boolean),
-        isRealtime: true,
-        realtimeSource: 'rss',
-        views: 0,
-        likes: 0,
-        shares: 0,
-        trending: false
-      };
+      // 提取标签 - 修复标签格式问题
+        let tags = [];
+        try {
+          if (item.categories && Array.isArray(item.categories)) {
+            tags = item.categories
+              .map(cat => {
+                if (typeof cat === 'string') {
+                  return cat;
+                } else if (cat && typeof cat === 'object' && cat._) {
+                  return cat._;
+                } else if (cat && typeof cat === 'object' && cat.term) {
+                  return cat.term;
+                } else {
+                  return null;
+                }
+              })
+              .filter(tag => tag && typeof tag === 'string')
+              .slice(0, 5);
+          }
+          if (tags.length === 0) {
+            tags = extractTags(item.title, item.contentSnippet || '');
+          }
+        } catch (error) {
+          console.error('标签处理错误:', error);
+          tags = extractTags(item.title, item.contentSnippet || '');
+        }
+        
+        // 提取图片URL - 修复undefined访问问题
+        let imageUrl = '';
+        try {
+          if (item.enclosure && item.enclosure.url) {
+            imageUrl = item.enclosure.url;
+          } else if (item['media:content'] && item['media:content']['$'] && item['media:content']['$'].url) {
+            imageUrl = item['media:content']['$'].url;
+          } else {
+            imageUrl = extractImageFromContent(item.contentEncoded || item.content || '') || '';
+          }
+        } catch (error) {
+          imageUrl = extractImageFromContent(item.contentEncoded || item.content || '') || '';
+        }
+        
+        return {
+          title: item.title,
+          summary: item.contentSnippet || '',
+          content: item.contentEncoded || item.content || '',
+          publishDate: new Date(item.pubDate || item.isoDate),
+          source: feed.title,
+          author: item.creator || item.author || feed.title,
+          imageUrl,
+          sourceUrl: item.link,
+          category,
+          tags: Array.isArray(tags) ? tags.filter(tag => typeof tag === 'string') : [],
+          isRealtime: true,
+          realtimeSource: 'rss',
+          views: 0,
+          likes: 0,
+          shares: 0,
+          trending: false
+        };
     });
   } catch (error) {
     console.error(`从RSS源获取数据时出错: ${(error as Error).message}`);

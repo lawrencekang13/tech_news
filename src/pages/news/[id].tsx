@@ -75,13 +75,14 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   try {
     await connectDB();
     const news = await getNewsByIdServer(id as string);
-    const relatedNews = await getRelatedNewsServer(id as string, news.category || '', 5);
 
     if (!news) {
       return {
         notFound: true,
       };
     }
+
+    const relatedNews = await getRelatedNewsServer(id as string, news.category || '', 5);
 
     return {
       props: {
