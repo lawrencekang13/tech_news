@@ -144,11 +144,15 @@ function determineCategoryFromFeed(feedTitle: string, categories?: string[]) {
   // 尝试从Feed分类中确定
   if (categories && categories.length > 0) {
     const category = categories[0].toLowerCase();
-    if (category.includes('ai') || category.includes('artificial')) return '人工智能';
-    if (category.includes('tech') || category.includes('technology')) return '科技前沿';
-    if (category.includes('mobile') || category.includes('phone')) return '移动设备';
-    if (category.includes('web') || category.includes('internet')) return '互联网';
-    if (category.includes('security') || category.includes('cyber')) return '网络安全';
+    if (category.includes('ai') || category.includes('artificial')) return 'ai';
+    if (category.includes('blockchain') || category.includes('crypto')) return 'blockchain';
+    if (category.includes('mobile') || category.includes('phone')) return 'mobile';
+    if (category.includes('security') || category.includes('cyber')) return 'security';
+    if (category.includes('space') || category.includes('nasa')) return 'space';
+    if (category.includes('bio') || category.includes('medical')) return 'biotech';
+    if (category.includes('quantum')) return 'quantum-computing';
+    if (category.includes('web') || category.includes('internet')) return 'internet';
+    if (category.includes('tech') || category.includes('technology')) return 'tech';
   }
   
   // 尝试从Feed标题中确定
@@ -166,14 +170,14 @@ function mapCategory(source: string, originalCategory: string) {
   if (sourceTitle.includes('ai') || category.includes('ai') || 
       sourceTitle.includes('artificial') || category.includes('artificial') ||
       sourceTitle.includes('machine learning') || category.includes('machine learning')) {
-    return '人工智能';
+    return 'ai';
   }
   
-  // 科技前沿
-  if (sourceTitle.includes('tech') || category.includes('tech') ||
-      sourceTitle.includes('wired') || sourceTitle.includes('verge') ||
-      sourceTitle.includes('engadget')) {
-    return '科技前沿';
+  // 区块链
+  if (sourceTitle.includes('blockchain') || category.includes('blockchain') ||
+      sourceTitle.includes('crypto') || category.includes('crypto') ||
+      category.includes('bitcoin')) {
+    return 'blockchain';
   }
   
   // 移动设备
@@ -181,25 +185,43 @@ function mapCategory(source: string, originalCategory: string) {
       sourceTitle.includes('phone') || category.includes('phone') ||
       sourceTitle.includes('android') || category.includes('android') ||
       sourceTitle.includes('ios') || category.includes('ios')) {
-    return '移动设备';
-  }
-  
-  // 互联网
-  if (sourceTitle.includes('web') || category.includes('web') ||
-      sourceTitle.includes('internet') || category.includes('internet') ||
-      sourceTitle.includes('social') || category.includes('social')) {
-    return '互联网';
+    return 'mobile';
   }
   
   // 网络安全
   if (sourceTitle.includes('security') || category.includes('security') ||
       sourceTitle.includes('cyber') || category.includes('cyber') ||
       sourceTitle.includes('privacy') || category.includes('privacy')) {
-    return '网络安全';
+    return 'security';
+  }
+  
+  // 太空探索
+  if (sourceTitle.includes('space') || category.includes('space') ||
+      sourceTitle.includes('nasa') || category.includes('nasa') ||
+      category.includes('rocket') || category.includes('satellite')) {
+    return 'space';
+  }
+  
+  // 生物技术
+  if (sourceTitle.includes('bio') || category.includes('bio') ||
+      category.includes('medical') || category.includes('health')) {
+    return 'biotech';
+  }
+  
+  // 量子计算
+  if (category.includes('quantum')) {
+    return 'quantum-computing';
+  }
+  
+  // 互联网
+  if (sourceTitle.includes('web') || category.includes('web') ||
+      sourceTitle.includes('internet') || category.includes('internet') ||
+      sourceTitle.includes('social') || category.includes('social')) {
+    return 'internet';
   }
   
   // 默认分类
-  return '科技前沿';
+  return 'tech';
 }
 
 /**

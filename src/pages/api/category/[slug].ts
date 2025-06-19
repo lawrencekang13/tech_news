@@ -67,10 +67,9 @@ export default async function handler(
       }
     }
 
-    // 构建查询条件
-    const categoryName = category?.name ?? getCategoryName(slug as string);
+    // 构建查询条件 - 直接使用slug而不是categoryName
     const query = {
-      category: categoryName,
+      category: slug as string,
       status: 'published'
     };
 
@@ -96,7 +95,7 @@ export default async function handler(
         hasNextPage: page < Math.ceil(total / limit),
         hasPrevPage: page > 1
       },
-      message: `获取分类 ${categoryName} 新闻成功`
+      message: `获取分类 ${category?.name || slug} 新闻成功`
     };
 
     // 缓存结果（5分钟）
