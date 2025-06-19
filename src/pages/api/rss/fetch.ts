@@ -71,23 +71,24 @@ async function fetchFromRSS(feedUrl: string) {
       const category = determineCategoryFromFeed(feed.title, item.categories);
       
       // 提取标签 - 修复标签格式问题
-        let tags = [];
+        let tags: string[] = [];
         try {
           if (item.categories && Array.isArray(item.categories)) {
-            tags = item.categories
-              .map(cat => {
+            const processedTags = item.categories
+              .map((cat: any) => {
                 if (typeof cat === 'string') {
                   return cat;
-                } else if (cat && typeof cat === 'object' && cat._) {
-                  return cat._;
-                } else if (cat && typeof cat === 'object' && cat.term) {
-                  return cat.term;
+                } else if (cat && typeof cat === 'object' && '_' in cat) {
+                  return String(cat._);
+                } else if (cat && typeof cat === 'object' && 'term' in cat) {
+                  return String(cat.term);
                 } else {
                   return null;
                 }
               })
-              .filter(tag => tag && typeof tag === 'string')
+              .filter((tag: any): tag is string => tag && typeof tag === 'string')
               .slice(0, 5);
+            tags = processedTags;
           }
           if (tags.length === 0) {
             tags = extractTags(item.title, item.contentSnippet || '');
@@ -100,10 +101,10 @@ async function fetchFromRSS(feedUrl: string) {
         // 提取图片URL - 修复undefined访问问题
         let imageUrl = '';
         try {
-          if (item.enclosure && item.enclosure.url) {
-            imageUrl = item.enclosure.url;
-          } else if (item['media:content'] && item['media:content']['$'] && item['media:content']['$'].url) {
-            imageUrl = item['media:content']['$'].url;
+          if ((item as any).enclosure && (item as any).enclosure.url) {
+            imageUrl = (item as any).enclosure?.url;
+          } else if (item.media && item.media['$'] && item.media['$'].url) {
+            imageUrl = (item.media as any)['$'].url;
           } else {
             imageUrl = extractImageFromContent(item.contentEncoded || item.content || '') || '';
           }
@@ -115,13 +116,13 @@ async function fetchFromRSS(feedUrl: string) {
           title: item.title,
           summary: item.contentSnippet || '',
           content: item.contentEncoded || item.content || '',
-          publishDate: new Date(item.pubDate || item.isoDate),
+          publishDate: new Date(item.pubDate || item.isoDate || new Date().toISOString()),
           source: feed.title,
           author: item.creator || item.author || feed.title,
           imageUrl,
           sourceUrl: item.link,
           category,
-          tags: Array.isArray(tags) ? tags.filter(tag => typeof tag === 'string') : [],
+          tags: tags,
           isRealtime: true,
           realtimeSource: 'rss',
           views: 0,
